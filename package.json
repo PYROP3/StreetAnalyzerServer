@@ -15,6 +15,7 @@
   },
   "devDependencies": {},
   "scripts": {
+    "build": "pip install -r requirements.txt",
     "test": "python -m pylint --rcfile=./script/.pylintrc_build --exit-zero script && echo \"OK!\"",
     "start": "node Server.js"
   },
