@@ -182,7 +182,6 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
         return;
     }
 
-
     const python = spawn(
         process.env.PYTHON_BIN,
         [
