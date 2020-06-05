@@ -1,0 +1,228 @@
+[
+    {
+        "id":0,
+        "Name": "Success",
+        "HttpReturn": 200,
+        "Data": {
+            "English":{
+                "PrettyName": "Success",
+                "Description": "Operation succeeded"
+            },
+            "Portugues":{
+                "PrettyName": "Sucesso",
+                "Description": "Operação bem-sucedida"
+            }
+        }
+    },
+    {
+        "id":1,
+        "Name": "UnknownError",
+        "HttpReturn": 500,
+        "Data": {
+            "English":{
+                "PrettyName": "Unknown Error",
+                "Description": "Operation failed due to an unexpected error"
+            },
+            "Portugues":{
+                "PrettyName": "Erro Desconhecido",
+                "Description": "Operação falhou devido a um erro inesperado"
+            }
+        }
+    },
+    {
+        "id":2,
+        "Name": "UnknownScriptError",
+        "HttpReturn": 500,
+        "Data": {
+            "English":{
+                "PrettyName": "Unknown Error",
+                "Description": "Operation failed due to an error"
+            },
+            "Portugues":{
+                "PrettyName": "Erro Desconhecido",
+                "Description": "Operação falhou devido a um erro"
+            }
+        }
+    },
+    {
+        "id":3,
+        "Name": "MemoryError",
+        "HttpReturn": 507,
+        "Data": {
+            "English":{
+                "PrettyName": "Insufficient storage",
+                "Description": "The request was too big to process"
+            },
+            "Portugues":{
+                "PrettyName": "Espaço insuficiente",
+                "Description": "A requisição foi muito grande para processar"
+            }
+        }
+    },
+    {
+        "id":4,
+        "Name": "ArgumentTypeError",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Argument Type Error",
+            "Description": "One of the supplied arguments is in an unexpected format"
+            },
+            "Portugues":{
+                "PrettyName": "Erro de tipo de argumento",
+                "Description": "Um dos argumentos fornecidos está em um formato inesperado"
+            }
+        }
+    },
+    {
+        "id":5,
+        "Name": "LimitsError",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Coordinate outside the coverage limits",
+                "Description": "One of the supplied arguments is exceeding the real coordinates"
+            },
+            "Portugues":{
+                "PrettyName": "Coordenada fora dos limites de cobertura",
+                "Description": "Um dos argumentos fornecidos está ultrapassando as coordenadas reais"
+            }
+        }
+    },
+    {
+        "id":6,
+        "Name": "InvertedValues",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Misplaced Values",
+                "Description": "Maximum and minimun are reversed"
+            },
+            "Portugues":{
+                "PrettyName": "Valores invertidos",
+                "Description": "Máximo e mínimo estão invertidos"
+            }
+        }
+    },
+    {
+        "id":7,
+        "Name": "ValidationFailed",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Account validation failed",
+                "Description": "Check the URL and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Validacao de conta falhou",
+                "Description": "Verifique a URL e tente novamente"
+            }
+        }
+    },
+    {
+        "id":8,
+        "Name": "InvalidCredentials",
+        "HttpReturn": 401,
+        "Data": {
+            "English":{
+                "PrettyName": "Invalid credentials",
+                "Description": "Check the username and password and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Credenciais invalidas",
+                "Description": "Verifique os dados e tente novamente"
+            }
+        }
+    },
+    {
+        "id":9,
+        "Name": "NoAuthorizationToken",
+        "HttpReturn": 401,
+        "Data": {
+            "English":{
+                "PrettyName": "Not logged in",
+                "Description": "Log in and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Nao esta logado",
+                "Description": "Faca login e entre novamente"
+            }
+        }
+    },
+    {
+        "id":10,
+        "Name": "AuthorizationNotRecognized",
+        "HttpReturn": 401,
+        "Data": {
+            "English":{
+                "PrettyName": "Not logged in",
+                "Description": "Log in and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Nao esta logado",
+                "Description": "Faca login e entre novamente"
+            }
+        }
+    },
+    {
+        "id":11,
+        "Name": "MalformedToken",
+        "HttpReturn": 401,
+        "Data": {
+            "English":{
+                "PrettyName": "Malformed token",
+                "Description": "Check the token and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Token mal-formado",
+                "Description": "Verifique o token e tente noovamente"
+            }
+        }
+    },
+    {
+        "id":12,
+        "Name": "SessionNotFound",
+        "HttpReturn": 401,
+        "Data": {
+            "English":{
+                "PrettyName": "Session not found",
+                "Description": "Check the token and try again"
+            },
+            "Portugues":{
+                "PrettyName": "Sessao nao encontrada",
+                "Description": "Verifique o token e tente noovamente"
+            }
+        }
+    },
+    {
+        "id":13,
+        "Name": "MismatchedData",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Mismatched Data",
+                "Description": "Did not find data as it was expected"
+            },
+            "Portugues":{
+                "PrettyName": "Dados não pareados",
+                "Description": "Dados não foram encontrados como esperado"
+
+            }
+        }
+    },
+    {
+        "id":14,
+        "Name": "InvalidCoordinates",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Invalid Coordinates",
+            "Description": "Maximum and minimum coordinates have no difference"
+            },
+            "Portugues":{
+                "PrettyName": "Coordenadas Inválidas",
+                "Description": "Coordenadas minimas e máximas são iguais"
+            }
+        }
+    }
+]
