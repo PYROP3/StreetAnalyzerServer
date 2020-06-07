@@ -103,7 +103,7 @@ const load = async () => {
         // Check for correct credentials
         let result = await module.exports.db.collection(usersCollectionStr).findOne({
             [Constants.USER_PRIMARY_KEY]:user,
-            [Constants.USER_PASSWORD_KEY]:password
+            [Constants.USER_PASSWORD_KEY]:serverUtils.saltAndHashPassword(user, password)
         });
         logger.debug(JSON.stringify(result));
         if (result == null) { return null; }
