@@ -105,13 +105,13 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
     let data = req.body;
     let authToken = req.token;
     
-    let findResult = await mongo.db.collection('users').findOne({'email':data['email']});
+    let findResult = await mongo.db.collection('users').findOne({[Constants.USER_PRIMARY_KEY]:data[Constants.USER_PRIMARY_KEY]});
     if (findResult) {
-        logger.info("Account requested for email " + data['email'] + " already in use");
+        logger.info("Account requested for email " + data[Constants.USER_PRIMARY_KEY] + " already in use");
         sendErrorMessage("PrimaryKeyInUse", req, res); //TODO find a better way to reply
         return 
     }
-    var newUser = new userModel.User(data['email'], data['name'], data['password']).toJSON();
+    var newUser = new userModel.User(data[Constants.USER_PRIMARY_KEY], data['name'], data[Constants.USER_PASSWORD_KEY]).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
     logger.info("Creating user : ", newUser);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
