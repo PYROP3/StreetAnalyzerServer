@@ -62,18 +62,14 @@ server.use('/static', express.static('public'));
 
 // Error handling
 function sendErrorMessage(code, request, response) {
-    let rawdata = fs.readFileSync(serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH));
-    let parsedData = JSON.parse(rawdata);
+    let error;
     if (typeof(code)==='string') {
-        var name = code
-        code = parsedData.length - 1
-        while (1) {
-            if (parsedData[code]["Name"] == name) break;
-            code -= 1;
-            if (code < 0) { code = 1; break; }
-        }
+        error = serverUtils.findErrorByName(code)
+    } else {
+        let rawdata = fs.readFileSync(serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH));
+        let parsedData = JSON.parse(rawdata);
+        error = parsedData[code];
     }
-    let error = parsedData[code];
     let errorData = error["Data"][request.header("Locale") != null ? request.header("Locale") : Constants.DEFAULT_LOCALE];
     let thisErr = {
         "Error": errorData["PrettyName"],
@@ -159,10 +155,10 @@ server.post(Constants.AUTH_REQUEST, async function(req, res) {
     // TODO use SHA256 of password
     let authResult = await mongo.createSession(data.user, data.pass);
     logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
-    if (authResult) {
+    if (typeof(authResult) === 'string') {
         res.status(200).header("Content-Type", "application/json").send(JSON.stringify({[Constants.AUTH_TOKEN_KEY]:authResult}));
     } else {
-        sendErrorMessage("InvalidCredentials", req, res);
+        sendErrorMessage(authResult['id'], req, res);
     }
 });
 
