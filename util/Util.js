@@ -4,6 +4,7 @@ const Constants = require("./Constants.js");
 const crypto = require('crypto');
 const logger = require("./Logger.js").logger;
 const https = require('https');
+
 require('dotenv').config({path: __dirname + '/.env'});
 
 /**
