@@ -66,7 +66,7 @@
         "Data": {
             "English":{
                 "PrettyName": "Argument Type Error",
-            "Description": "One of the supplied arguments is in an unexpected format"
+                "Description": "One of the supplied arguments is in an unexpected format"
             },
             "Portugues":{
                 "PrettyName": "Erro de tipo de argumento",
@@ -225,17 +225,32 @@
         }
     },
     {
-        "id":14,
+        "id":15,
         "Name": "InvalidCoordinates",
         "HttpReturn": 400,
         "Data": {
             "English":{
                 "PrettyName": "Invalid Coordinates",
-            "Description": "Maximum and minimum coordinates have no difference"
+                "Description": "Maximum and minimum coordinates have no difference"
             },
             "Portugues":{
                 "PrettyName": "Coordenadas Inválidas",
                 "Description": "Coordenadas minimas e máximas são iguais"
+            }
+        }
+    },
+    {
+        "id":16,
+        "Name": "ActiveSessionFound",
+        "HttpReturn": 409,
+        "Data": {
+            "English":{
+                "PrettyName": "Active Session Found",
+                "Description": "There is already a session for this user"
+            },
+            "Portugues":{
+                "PrettyName": "Sessão ativa encontrada",
+                "Description": "Já existe uma sessão para este usuário"
             }
         }
     }

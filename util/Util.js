@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const Constants = require("./Constants.js");
 const crypto = require('crypto');
 require('dotenv').config({path: __dirname + '/.env'});
@@ -47,6 +48,23 @@ module.exports.parseAuthToken = function(authToken) {
     }
 
     return authToken.substr(Constants.AUTH_TOKEN_NAME.length);
+}
+
+/**
+ * Find an error by its name
+ *
+ * @param name {String} Error to find
+ */
+module.exports.findErrorByName = function(name) {
+    let rawdata = fs.readFileSync(module.exports.fetchFile(Constants.SCRIPT_ERRORS_PATH));
+    let parsedData = JSON.parse(rawdata);
+    var code = parsedData.length - 1
+    while (1) {
+        if (parsedData[code]["Name"] == name) break;
+        code -= 1;
+        if (code < 0) { code = 1; break; }
+    }
+    return parsedData[code];
 }
 
 /**

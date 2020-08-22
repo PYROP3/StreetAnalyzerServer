@@ -105,10 +105,15 @@ const load = async () => {
             [Constants.USER_PRIMARY_KEY]:user,
             [Constants.USER_PASSWORD_KEY]:serverUtils.saltAndHashPassword(user, password)
         });
-        logger.debug(JSON.stringify(result));
-        if (result == null) { return null; }
+        if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
 
-        //TODO check if a session already exists
+        // Check if there is not a session active for the user
+        result = await module.exports.db.collection(sessionsCollectionStr).findOne({
+            [Constants.USER_PRIMARY_KEY]:user
+        });
+        logger.debug(result);
+        if (result != null) { return serverUtils.findErrorByName("ActiveSessionFound"); }
+
         let token = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
         result = await module.exports.db.collection(sessionsCollectionStr).insertOne({
             [Constants.USER_PRIMARY_KEY]:user,
