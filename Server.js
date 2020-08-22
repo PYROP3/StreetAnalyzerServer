@@ -103,13 +103,20 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
     
     let findResult = await mongo.db.collection('users').findOne({[Constants.USER_PRIMARY_KEY]:data[Constants.USER_PRIMARY_KEY]});
     if (findResult) {
-        logger.info("Account requested for email " + data[Constants.USER_PRIMARY_KEY] + " already in use");
+        logger.info("Account requested for PK ("  + Constants.USER_PRIMARY_KEY + ") " + data[Constants.USER_PRIMARY_KEY] + " already in use");
         sendErrorMessage("PrimaryKeyInUse", req, res); //TODO find a better way to reply
         return 
     }
-    var newUser = new userModel.User(data[Constants.USER_PRIMARY_KEY], data['name'], data[Constants.USER_PASSWORD_KEY]).toJSON();
+    var newUser = new userModel.User(
+        data['email'], 
+        data['name'], 
+        serverUtils.saltAndHashPassword(
+            data['email'], 
+            data['password']
+        )
+    ).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
-    logger.info("Creating user : ", newUser);
+    logger.info("Creating user : ", newUser[Constants.USER_PRIMARY_KEY]);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
     if (result == null) {
         sendErrorMessage(1, req, res);
@@ -122,12 +129,7 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
                     from: Constants.SOURCE_EMAIL_ADDRESS,
                     to: newUser['email'],
                     subject: 'Street analyzer account validation',
-                    text: 'That was easy!\n' + 
-                        'Now just click on this link to validate your account: ' +
-                        Constants.SERVER_URL + 
-                        Constants.VERIFY_ACCOUNT_REQUEST + 
-                        '?token='+newUser['authToken'],
-                    html: result.email.html,
+                    html: result.email.html
                 });
             }));
         });
@@ -137,6 +139,10 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
 server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
     let query = req.query;
     let authToken = query.token;
+    if (authToken == null) {
+        sendErrorMessage("MalformedToken", req, res);
+        return;
+    }
 
     let auth = await mongo.db.collection('pendingUsers').findOneAndDelete({'authToken':authToken});
     if (auth == null) {
@@ -178,7 +184,7 @@ server.get(Constants.DEAUTH_REQUEST, async function(req, res) {
         return;
     }
 
-    sendErrorMessage(0, req, res);
+    sendErrorMessage(0, req, res); //TODO find a better way to replyc
 });
 
 server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {

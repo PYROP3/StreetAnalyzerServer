@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Constants = require("./Constants.js");
+const crypto = require('crypto');
 require('dotenv').config({path: __dirname + '/.env'});
 
 /**
@@ -75,3 +76,15 @@ module.exports.isLocalEnvironment = (process.env.NODE_ENV === 'local');
  * Returns server url
  */
 module.exports.serverUrl = (process.env.SERVER_URL != null ? process.env.SERVER_URL : Constants.SERVER_URL_DEFAULT)
+
+/**
+ * Return a salted hash created from username and password
+ *
+ * @param username {String} Username (primary key)
+ * @param password {String} Password
+ */
+module.exports.saltAndHashPassword = function(username, password) {
+    return crypto.createHmac('sha256', process.env.PASSWORD_HASHING_SECRET)
+                   .update(username + "." + password)
+                   .digest('hex');
+}
