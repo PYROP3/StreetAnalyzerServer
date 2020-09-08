@@ -174,6 +174,7 @@ const load = async () => {
         let result = await module.exports.db.collection(usersCollectionStr).findOne({
             [Constants.USER_PRIMARY_KEY]:user
         });
+        logger.debug("Got user data =", result);
         if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
         
         return result;
