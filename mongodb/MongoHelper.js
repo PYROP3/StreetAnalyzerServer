@@ -164,10 +164,28 @@ const load = async () => {
         return null
     }
 
+    /**
+     * Get all stored date related to a user
+     *
+     * @param user {String} Primary key identifying the user
+     */
+    module.exports.getUser = async function(user) {
+        // Check for correct credentials
+        let result = await module.exports.db.collection(usersCollectionStr).findOne({
+            [Constants.USER_PRIMARY_KEY]:user
+        });
+        if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
+        
+        return result;
+    }
+
     // Tests
+    var user = "caiotsan@gmail.com"
+    var password = "HelloWorld"
+    logger.info("Salted password: " + serverUtils.saltAndHashPassword(user, password))
     logger.info("Destroying nonexistent session ", await module.exports.destroySession("abc"));
-    var tok = await module.exports.createSession("caiotsan@gmail.com", "HelloWorld");
-    logger.info("Created session, token = " + tok);
+    var tok = await module.exports.createSession(user, password);
+    logger.info("Created session, token = ", tok);
     var res = await module.exports.validateSession(tok);
     logger.info("Checking for session: " + (res ? "ok" : "fail"));
     var res = await module.exports.validateUserSession(tok, "caiotsan@gmail.com");

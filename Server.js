@@ -162,7 +162,9 @@ server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
     logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
     if (typeof(authResult) === 'string') {
-        res.status(200).header("Content-Type", "application/json").send(JSON.stringify({[Constants.AUTH_TOKEN_KEY]:authResult}));
+        let userData = mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
+        userData[Constants.AUTH_TOKEN_KEY] = authResult;
+        res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
         sendErrorMessage(authResult['id'], req, res);
     }
