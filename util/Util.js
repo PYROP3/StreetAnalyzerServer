@@ -88,3 +88,10 @@ module.exports.saltAndHashPassword = function(username, password) {
                    .update(username + "." + password)
                    .digest('hex');
 }
+
+/**
+ * Return a default, b64-encoded, profile picture in case user has not provided one
+ */
+module.exports.getDefaultProfilePic = function() {
+    return fs.readFileSync(this.fetchFile(Constants.DEFAULT_PIC_PATH), 'utf8')
+}

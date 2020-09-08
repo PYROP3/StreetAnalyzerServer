@@ -32,6 +32,8 @@ module.exports.USER_PRIMARY_KEY  = "email"
 module.exports.USER_PASSWORD_KEY = "password"
 module.exports.AUTH_TOKEN_KEY    = "authToken"
 module.exports.TIMESTAMP_KEY     = "timestamp"
+module.exports.USER_PIC_KEY      = "pic"
+module.exports.USER_NAME_KEY     = "name"
 
 // Authentication info
 module.exports.AUTH_TOKEN_LENGTH = 64
@@ -40,3 +42,6 @@ module.exports.AUTH_TOKEN_NAME = module.exports.AUTH_TOKEN_TYPE + " "
 
 module.exports.SERVER_PORT_DEFAULT = 8080
 module.exports.SERVER_URL_DEFAULT = "http://localhost:"+module.exports.SERVER_PORT_DEFAULT
+
+// Pic info
+module.exports.DEFAULT_PIC_PATH = "public/images/default_pic.b64"
