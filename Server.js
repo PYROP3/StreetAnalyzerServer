@@ -116,7 +116,7 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
         )
     ).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
-    logger.info("Creating user : ", newUser[Constants.USER_PRIMARY_KEY]);
+    logger.info("Creating user : " + newUser[Constants.USER_PRIMARY_KEY]);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
     if (result == null) {
         sendErrorMessage(1, req, res);
@@ -158,14 +158,14 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
 
 server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let data = req.body;
-    // TODO use SHA256 of password
     let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
-    logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
     if (typeof(authResult) === 'string') {
+        logger.debug("Authentication result for " + JSON.stringify(data) + " is " + authResult)
         let userData = mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
         userData[Constants.AUTH_TOKEN_KEY] = authResult;
         res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
+        logger.debug("Authentication result for " + JSON.stringify(data) + " is", authResult)
         sendErrorMessage(authResult['id'], req, res);
     }
 });
