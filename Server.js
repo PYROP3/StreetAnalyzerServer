@@ -158,9 +158,8 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
 
 server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let data = req.body;
-    // TODO use SHA256 of password
     let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
-    logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
+    logger.debug("Authentication result for " + JSON.stringify(data) + " is ", authResult)
     if (typeof(authResult) === 'string') {
         let userData = mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
         userData[Constants.AUTH_TOKEN_KEY] = authResult;
