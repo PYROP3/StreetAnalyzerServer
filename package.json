@@ -11,8 +11,8 @@
     "handlebars": "^4.7.6",
     "jws": "^4.0.0",
     "mongodb": "^3.5.7",
-    "nodemailer": "^6.4.11",
-    "request-cookie": "^0.0.2",
+    "nodemailer": "^6.4.6",
+    "request-cookie": "^1.0.0",
     "winston": "^3.2.1"
   },
   "devDependencies": {},
