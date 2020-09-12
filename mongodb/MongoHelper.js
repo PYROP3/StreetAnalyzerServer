@@ -55,8 +55,8 @@ const spawnMongod = () => {
     // Handle mongod process exit
     module.exports._mongodProcess.on('close', function (code) {
         logger.warn('[mongod/close] ' + code);
-        if (code == 100) { // Instance already running, terminate it
-            logger.warn('[mongod/close] Mongo was already executing');
+        if (code == 100) { // Instance already running
+            logger.warn('[mongod/close] Mongod instance already running, logger is unavailable');
         }
     });
 
@@ -103,12 +103,17 @@ const load = async () => {
         // Check for correct credentials
         let result = await module.exports.db.collection(usersCollectionStr).findOne({
             [Constants.USER_PRIMARY_KEY]:user,
-            [Constants.USER_PASSWORD_KEY]:password
+            [Constants.USER_PASSWORD_KEY]:serverUtils.saltAndHashPassword(user, password)
         });
-        logger.debug(JSON.stringify(result));
-        if (result == null) { return null; }
+        if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
 
-        //TODO check if a session already exists
+        // Check if there is not a session active for the user
+        result = await module.exports.db.collection(sessionsCollectionStr).findOne({
+            [Constants.USER_PRIMARY_KEY]:user
+        });
+        logger.debug(result);
+        if (result != null) { return serverUtils.findErrorByName("ActiveSessionFound"); }
+
         let token = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
         result = await module.exports.db.collection(sessionsCollectionStr).insertOne({
             [Constants.USER_PRIMARY_KEY]:user,
@@ -159,10 +164,28 @@ const load = async () => {
         return null
     }
 
+    /**
+     * Get all stored date related to a user
+     *
+     * @param user {String} Primary key identifying the user
+     */
+    module.exports.getUser = async function(user) {
+        // Check for correct credentials
+        let result = await module.exports.db.collection(usersCollectionStr).findOne({
+            [Constants.USER_PRIMARY_KEY]:user
+        });
+        if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
+        
+        return result;
+    }
+
     // Tests
+    var user = "caiotsan@gmail.com"
+    var password = "HelloWorld"
+    logger.info("Salted password: " + serverUtils.saltAndHashPassword(user, password))
     logger.info("Destroying nonexistent session ", await module.exports.destroySession("abc"));
-    var tok = await module.exports.createSession("caiotsan@gmail.com", "HelloWorld");
-    logger.info("Created session, token = " + tok);
+    var tok = await module.exports.createSession(user, password);
+    logger.info("Created session, token = ", tok);
     var res = await module.exports.validateSession(tok);
     logger.info("Checking for session: " + (res ? "ok" : "fail"));
     var res = await module.exports.validateUserSession(tok, "caiotsan@gmail.com");
