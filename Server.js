@@ -13,6 +13,7 @@ const mailer = require("./util/MailerHelper.js");
 
 // JSON via post
 const bodyParser = require('body-parser');
+const { isNull, isNullOrUndefined } = require('util');
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
 
@@ -107,16 +108,24 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
         sendErrorMessage("PrimaryKeyInUse", req, res); //TODO find a better way to reply
         return 
     }
+
+    if (data[Constants.USER_PIC_KEY] == null) {
+        logger.info("User did not supply pic, using default");
+        data[Constants.USER_PIC_KEY] = serverUtils.getDefaultProfilePic();
+    }
+
     var newUser = new userModel.User(
-        data['email'], 
-        data['name'], 
+        data[Constants.USER_PRIMARY_KEY], 
+        data[Constants.USER_NAME_KEY], 
         serverUtils.saltAndHashPassword(
-            data['email'], 
-            data['password']
-        )
+            data[Constants.USER_PRIMARY_KEY], 
+            data[Constants.USER_PASSWORD_KEY]
+        ),
+        data[Constants.USER_PIC_KEY]
     ).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
     logger.info("Creating user : " + newUser[Constants.USER_PRIMARY_KEY]);
+    logger.debug("Creating user :", newUser);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
     if (result == null) {
         sendErrorMessage(1, req, res);
@@ -151,7 +160,12 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
         auth = auth['value'];
         logger.info("Validating user : ", auth);
         delete(auth['authToken']);
-        await mongo.db.collection('users').insertOne(new userModel.User(auth).toJSON());
+        await mongo.db.collection('users').insertOne(new userModel.User(
+            auth[Constants.USER_PRIMARY_KEY], 
+            auth[Constants.USER_NAME_KEY],  
+            auth[Constants.USER_PASSWORD_KEY],
+            auth[Constants.USER_PIC_KEY]
+        ).toJSON());
         sendErrorMessage(0, req, res); //TODO find a better way to reply
     }
 });
@@ -160,8 +174,10 @@ server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let data = req.body;
     let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
     if (typeof(authResult) === 'string') {
-        logger.debug("Authentication result for " + JSON.stringify(data) + " is " + authResult)
-        let userData = mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
+        let userData = await mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
+        delete(userData[Constants.USER_PASSWORD_KEY]) // Remove user password from response
+        delete(userData["_id"]) // Remove mongo document id
+        logger.debug("Got user data =", userData)
         userData[Constants.AUTH_TOKEN_KEY] = authResult;
         res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
@@ -211,7 +227,6 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
         sendErrorMessage(14, req, res);
         return;
     }
-
 
     const python = spawn(
         process.env.PYTHON_BIN,
@@ -299,8 +314,6 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
             return;
         }
     }
-
-
 
     if((data["pontos"]).length != (data["dados"]).length + 1){
         sendErrorMessage(13, req, res);
