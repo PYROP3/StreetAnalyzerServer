@@ -1,5 +1,7 @@
 const path = require('path');
+const fs = require('fs');
 const Constants = require("./Constants.js");
+const crypto = require('crypto');
 require('dotenv').config({path: __dirname + '/.env'});
 
 /**
@@ -49,6 +51,23 @@ module.exports.parseAuthToken = function(authToken) {
 }
 
 /**
+ * Find an error by its name
+ *
+ * @param name {String} Error to find
+ */
+module.exports.findErrorByName = function(name) {
+    let rawdata = fs.readFileSync(module.exports.fetchFile(Constants.SCRIPT_ERRORS_PATH));
+    let parsedData = JSON.parse(rawdata);
+    var code = parsedData.length - 1
+    while (1) {
+        if (parsedData[code]["Name"] == name) break;
+        code -= 1;
+        if (code < 0) { code = 1; break; }
+    }
+    return parsedData[code];
+}
+
+/**
  * Returns true if the server is running locally, and false otherwise
  */
 module.exports.isLocalEnvironment = (process.env.NODE_ENV === 'local');
@@ -57,3 +76,15 @@ module.exports.isLocalEnvironment = (process.env.NODE_ENV === 'local');
  * Returns server url
  */
 module.exports.serverUrl = (process.env.SERVER_URL != null ? process.env.SERVER_URL : Constants.SERVER_URL_DEFAULT)
+
+/**
+ * Return a salted hash created from username and password
+ *
+ * @param username {String} Username (primary key)
+ * @param password {String} Password
+ */
+module.exports.saltAndHashPassword = function(username, password) {
+    return crypto.createHmac('sha256', process.env.PASSWORD_HASHING_SECRET)
+                   .update(username + "." + password)
+                   .digest('hex');
+}

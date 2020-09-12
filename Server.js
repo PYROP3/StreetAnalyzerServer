@@ -62,18 +62,14 @@ server.use('/static', express.static('public'));
 
 // Error handling
 function sendErrorMessage(code, request, response) {
-    let rawdata = fs.readFileSync(serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH));
-    let parsedData = JSON.parse(rawdata);
+    let error;
     if (typeof(code)==='string') {
-        var name = code
-        code = parsedData.length - 1
-        while (1) {
-            if (parsedData[code]["Name"] == name) break;
-            code -= 1;
-            if (code < 0) { code = 1; break; }
-        }
+        error = serverUtils.findErrorByName(code)
+    } else {
+        let rawdata = fs.readFileSync(serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH));
+        let parsedData = JSON.parse(rawdata);
+        error = parsedData[code];
     }
-    let error = parsedData[code];
     let errorData = error["Data"][request.header("Locale") != null ? request.header("Locale") : Constants.DEFAULT_LOCALE];
     let thisErr = {
         "Error": errorData["PrettyName"],
@@ -105,15 +101,22 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
     let data = req.body;
     let authToken = req.token;
     
-    let findResult = await mongo.db.collection('users').findOne({'email':data['email']});
+    let findResult = await mongo.db.collection('users').findOne({[Constants.USER_PRIMARY_KEY]:data[Constants.USER_PRIMARY_KEY]});
     if (findResult) {
-        logger.info("Account requested for email " + data['email'] + " already in use");
+        logger.info("Account requested for PK ("  + Constants.USER_PRIMARY_KEY + ") " + data[Constants.USER_PRIMARY_KEY] + " already in use");
         sendErrorMessage("PrimaryKeyInUse", req, res); //TODO find a better way to reply
         return 
     }
-    var newUser = new userModel.User(data['email'], data['name'], data['password']).toJSON();
+    var newUser = new userModel.User(
+        data['email'], 
+        data['name'], 
+        serverUtils.saltAndHashPassword(
+            data['email'], 
+            data['password']
+        )
+    ).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
-    logger.info("Creating user : ", newUser);
+    logger.info("Creating user : ", newUser[Constants.USER_PRIMARY_KEY]);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
     if (result == null) {
         sendErrorMessage(1, req, res);
@@ -126,12 +129,7 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
                     from: Constants.SOURCE_EMAIL_ADDRESS,
                     to: newUser['email'],
                     subject: 'Street analyzer account validation',
-                    text: 'That was easy!\n' + 
-                        'Now just click on this link to validate your account: ' +
-                        Constants.SERVER_URL + 
-                        Constants.VERIFY_ACCOUNT_REQUEST + 
-                        '?token='+newUser['authToken'],
-                    html: result.email.html,
+                    html: result.email.html
                 });
             }));
         });
@@ -141,6 +139,10 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
 server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
     let query = req.query;
     let authToken = query.token;
+    if (authToken == null) {
+        sendErrorMessage("MalformedToken", req, res);
+        return;
+    }
 
     let auth = await mongo.db.collection('pendingUsers').findOneAndDelete({'authToken':authToken});
     if (auth == null) {
@@ -157,12 +159,14 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
 server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let data = req.body;
     // TODO use SHA256 of password
-    let authResult = await mongo.createSession(data.user, data.pass);
+    let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
     logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
-    if (authResult) {
-        res.status(200).header("Content-Type", "application/json").send(JSON.stringify({[Constants.AUTH_TOKEN_KEY]:authResult}));
+    if (typeof(authResult) === 'string') {
+        let userData = mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
+        userData[Constants.AUTH_TOKEN_KEY] = authResult;
+        res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
-        sendErrorMessage("InvalidCredentials", req, res);
+        sendErrorMessage(authResult['id'], req, res);
     }
 });
 
@@ -182,7 +186,7 @@ server.get(Constants.DEAUTH_REQUEST, async function(req, res) {
         return;
     }
 
-    sendErrorMessage(0, req, res);
+    sendErrorMessage(0, req, res); //TODO find a better way to replyc
 });
 
 server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
