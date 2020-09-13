@@ -112,7 +112,7 @@ const load = async () => {
             [Constants.USER_PRIMARY_KEY]:user
         });
         logger.debug(result);
-        if (result != null) { return serverUtils.findErrorByName("ActiveSessionFound"); }
+        if (result != null) { result[Constants.AUTH_TOKEN_KEY]; }
 
         let token = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
         result = await module.exports.db.collection(sessionsCollectionStr).insertOne({
