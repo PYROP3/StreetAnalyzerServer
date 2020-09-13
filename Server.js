@@ -310,7 +310,8 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
 
 
     for(let i = 0; i < (data["pontos"]).length; i++){
-        if(data["pontos"][i][0] > 180 || data["pontos"][i][0] < -180 || data["pontos"][i][1] > 90 || data["pontos"][i][1] < -90){
+        if(data["pontos"][i][1] > 180 || data["pontos"][i][1] < -180 || data["pontos"][i][0] > 90 || data["pontos"][i][0] < -90){
+            logger.debug("Unexpected coordinates:", data)
             sendErrorMessage(5, req, res);
             return;
         }
@@ -323,7 +324,7 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
 
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
-        "--coordinates"    , data["pontos"].map(coord => coord.join(",")).join(" "),
+        "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
         "--overlay_folder" , serverUtils.fetchFile("/overlay/"),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
