@@ -10,7 +10,7 @@
     "express": "^4.17.1",
     "handlebars": "^4.7.6",
     "jws": "^4.0.0",
-    "mongodb": "^3.5.7",
+    "mongodb": "^3.6.2",
     "nodemailer": "^6.4.6",
     "request-cookie": "^0.0.2",
     "winston": "^3.2.1"
