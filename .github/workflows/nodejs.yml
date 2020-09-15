@@ -16,7 +16,10 @@ jobs:
     - name: Install pylint
       run: pip install pylint
 
-    - name: npm install, build, and test
+    - name: Npm install
+      run: npm install
+
+    - name: build, and test
       run: |
         npm ci --if-present
         npm run build --if-present
