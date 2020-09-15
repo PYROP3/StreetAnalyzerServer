@@ -101,6 +101,8 @@ const load = async () => {
      */
     module.exports.createSession = async function(user, password) {
         // Check for correct credentials
+        logger.debug("[createSession] User: " + user)
+        logger.debug("[createSession] Pass: " + serverUtils.saltAndHashPassword(user, password))
         let result = await module.exports.db.collection(usersCollectionStr).findOne({
             [Constants.USER_PRIMARY_KEY]:user,
             [Constants.USER_PASSWORD_KEY]:serverUtils.saltAndHashPassword(user, password)
@@ -112,7 +114,7 @@ const load = async () => {
             [Constants.USER_PRIMARY_KEY]:user
         });
         logger.debug(result);
-        if (result != null) { return serverUtils.findErrorByName("ActiveSessionFound"); }
+        if (result != null) { result[Constants.AUTH_TOKEN_KEY]; }
 
         let token = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
         result = await module.exports.db.collection(sessionsCollectionStr).insertOne({
@@ -120,7 +122,7 @@ const load = async () => {
             [Constants.AUTH_TOKEN_KEY]:token,
             [Constants.TIMESTAMP_KEY]:Date.now()
         });
-        logger.debug(JSON.stringify(result));
+        logger.debug("Created session: " + JSON.stringify(result));
         if (result == null) { return null; }
         return token;
     }
@@ -174,6 +176,7 @@ const load = async () => {
         let result = await module.exports.db.collection(usersCollectionStr).findOne({
             [Constants.USER_PRIMARY_KEY]:user
         });
+        logger.debug("Got user data =", result);
         if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
         
         return result;
