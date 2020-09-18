@@ -1,0 +1,54 @@
+body{
+    background: #C3EAE9;
+}
+
+header{
+    background:#06413f;
+    background-repeat: round;
+    height: 45px;
+}
+
+.menu{
+    position: relative;
+    height: 45px;
+    width: 100%;
+    z-index: 1000;
+}
+
+nav{
+    position: absolute;
+    top: 0;
+    right: 0;
+    background:#06413f;
+    width: 100%;
+    height: 100%;
+}
+
+nav li{
+    display: inline;
+    margin: 0 0 0 15px;
+}
+
+nav a{
+    
+    text-transform: uppercase; 
+    color: #C3EAE9; 
+    font-weight: bold; 
+    font-size: 22px;
+    text-decoration: none; 
+}
+
+ul{
+    padding-top: 10px;
+    padding-right: 30px;
+    text-align: right;
+}
+
+#map{
+    position: fixed;
+    vertical-align: bottom;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+}
