@@ -5,6 +5,9 @@ import argparse
 import json
 import math
 import numpy as np
+import base64
+from io import BytesIO
+import mongoInterface
 
 resolution = 0.01 # Arclength (in degrees) corresponding to each segment side - 0.01deg ~ 1Km
 dpb = 500 # Dots per block; each image should be (dpb x dpb)
@@ -44,6 +47,8 @@ b_channel = 2
 
 empty_gray = 200
 
+segmentHandler = mongoInterface.MongoInterface(mode='source' if source_mode else 'sigma_mu')
+
 def __rangeMap(min1, max1, val1, min2, max2):
     return min2 + (val1 - min1) * (max2 - min2)/(max1 - min1)
 
@@ -53,19 +58,13 @@ def __quad(x, y):
 def __sign(x):
     return 1 if x >= 0 else -1
 
-# def roundUp(x):
-#     return math.ceil(x) if x > 0 else math.floor(x)
-
-# def roundDown(x):
-#     return math.ceil(x) if x < 0 else math.floor(x)
-
 def expand_corners(min_x, min_y, max_x, max_y, resolution=resolution):
     return [
         [math.floor(min_x / resolution), math.floor(min_y / resolution)],
         [math.ceil(max_x / resolution), math.ceil(max_y / resolution)]
     ]
 
-def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_append="", dpb=dpb, overlay_path="", DEBUG=False, source_mode=False):
+def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_append="_sigma_mu", dpb=dpb, overlay_path="../overlay/", DEBUG=False, source_mode=False):
 
     required_corners = expand_corners(min_x, min_y, max_x, max_y, resolution=resolution)
 
@@ -82,23 +81,30 @@ def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_appen
 
     for _x in range(required_delta_x):
         x = _x + __x - __sign(min_x)
+
         for _y in range(required_delta_y):
             y = _y + __y - __sign(min_y)
+
             overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), alias_append)
             if DEBUG: print("Opening {}".format(overlay_alias))
+
             try: # Get segment if it exists
-                with Image.open(overlay_path+"graphics/"+overlay_alias+".png").convert("RGB") as temp_overlay:
-                    aux = np.asarray(temp_overlay)
-                    if DEBUG: print("Ranges: {}:{}, {}:{}".format(_y*dpb, (_y+1)*dpb, _x*dpb, (_x+1)*dpb))
-                    overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = aux[:, :, :]
-            except: # Create new segment if not found on disk
+                temp_overlay = b64ToImage(segmentHandler.getSegment(y, x, __quad(x, y)))
+                aux = np.asarray(temp_overlay)
+                if DEBUG: print("Ranges: {}:{}, {}:{}".format(_y*dpb, (_y+1)*dpb, _x*dpb, (_x+1)*dpb))
+                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = aux[:, :, :]
+
+            except: # Create new segment if not found
                 if DEBUG: print("[PYTHON] creating new segment (source_mode = {})".format(str(source_mode)))
+
                 if source_mode: # Source mode (for testing cropping)
                     img = Image.new("RGB", (dpb, dpb), ((x+y)%2*255, 0, (x+y)%2*255))
                     d = ImageDraw.Draw(img)
                     d.text((20, 20), overlay_alias, font=fnt, fill=(127, 127, 127, 255))
+
                 else: # Sigma-mu mode (for testing maths)
                     img = Image.new("RGB", (dpb, dpb), (127, 255, 0))
+
                 aux = np.asarray(img)
                 overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = aux[:, :, :]
 
@@ -117,7 +123,7 @@ def bounding_box(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb):
         int(__rangeMap(required_corners[0][1], required_corners[1][1], max_y / resolution, required_delta_y * dpb, 0))
     )
 
-def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, dpb=dpb, overlay_path="", DEBUG=False):
+def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, alias_append="_sigma_mu", dpb=dpb, overlay_path="../overlay/", DEBUG=False):
     required_corners = expand_corners(min_x, min_y, max_x, max_y, resolution=resolution)
 
     required_delta_x = abs(required_corners[1][0] - required_corners[0][0])
@@ -125,11 +131,23 @@ def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, dpb=
 
     __x =  math.ceil(min_x / resolution) if min_x > 0 else math.floor(min_x / resolution)
     __y =  math.ceil(min_y / resolution) if min_y > 0 else math.floor(min_y / resolution)
+
     for _x in range(required_delta_x):
         x = _x + __x - __sign(min_x)
+
         for _y in range(required_delta_y):
             y = _y + __y - __sign(min_y)
-            overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), "_sigma_mu")
+
+            overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), alias_append)
             if DEBUG: print("Saving as {}".format(overlay_alias))
+
             overlay_segment = Image.fromarray(canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :])
-            overlay_segment.save(overlay_path+"graphics/"+overlay_alias+".png", format="PNG")
+            segmentHandler.saveSegment(y, x, __quad(x, y), imageToB64(overlay_segment))
+
+def b64ToImage(data):
+    return Image.open(BytesIO(base64.b64decode(data)))
+
+def imageToB64(img):
+    _buffer = BytesIO()
+    img.save(_buffer, format="PNG")
+    return base64.b64encode(_buffer.getvalue())
