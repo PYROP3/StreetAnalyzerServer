@@ -199,7 +199,9 @@ const load = async () => {
             {"$set":{[Constants.USER_PASSWORD_KEY]:newPassword}}
         );
         return result.value;
+    }
 
+    /*
      * Get all stored date related to a user
      *
      * @param user {String} Primary key identifying the user
