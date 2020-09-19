@@ -102,3 +102,13 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Python cache files
+__pycache__/
+
+# Python object files
+*.pyc
+*.pylintrc_build
+
+# Package-lock is not necessary
+package-lock.json
