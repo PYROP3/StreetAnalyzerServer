@@ -8,11 +8,6 @@ const {spawn} = require('child_process');
 // Environment variables
 require('dotenv').config({path: __dirname + '/.env'});
 
-// Collections
-const usersCollectionStr        = 'users'
-const pendingUsersCollectionStr = 'pendingUsers'
-const sessionsCollectionStr     = 'sessions'
-
 logger.info("Starting mongo helper...");
 
 let _dbUrl;
@@ -86,7 +81,7 @@ const load = async () => {
      */
     module.exports.checkForSession = function(user) {
         let key = Constants.USER_PRIMARY_KEY;
-        let result = module.exports.db.collection(sessionsCollectionStr).findOne({key:user});
+        let result = module.exports.db.collection(Constants.MONGO_COLLECTION_SESSIONS).findOne({key:user});
         if (result) {
             return true
         }
@@ -103,7 +98,8 @@ const load = async () => {
         // Check for correct credentials
         logger.debug("[createSession] User: " + user)
         logger.debug("[createSession] Pass: " + serverUtils.saltAndHashPassword(user, password))
-        let result = await module.exports.db.collection(usersCollectionStr).findOne({
+      
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_USERS).findOne({
             [Constants.USER_PRIMARY_KEY]:user,
             [Constants.USER_PASSWORD_KEY]:serverUtils.saltAndHashPassword(user, password)
         });
@@ -117,7 +113,7 @@ const load = async () => {
         if (result != null) { result[Constants.AUTH_TOKEN_KEY]; }
 
         let token = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
-        result = await module.exports.db.collection(sessionsCollectionStr).insertOne({
+        result = await module.exports.db.collection(Constants.MONGO_COLLECTION_SESSIONS).insertOne({
             [Constants.USER_PRIMARY_KEY]:user,
             [Constants.AUTH_TOKEN_KEY]:token,
             [Constants.TIMESTAMP_KEY]:Date.now()
@@ -133,7 +129,7 @@ const load = async () => {
      * @param token {String} Token to be authenticated
      */
     module.exports.validateSession = async function(token) {
-        let result = await module.exports.db.collection(sessionsCollectionStr).findOne({[Constants.AUTH_TOKEN_KEY]:token});
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_SESSIONS).findOne({[Constants.AUTH_TOKEN_KEY]:token});
         logger.debug("Got result", result);
         return result;
     }
@@ -145,7 +141,7 @@ const load = async () => {
      * @param user {String} Primary key identifying the user to be checked
      */
     module.exports.validateUserSession = async function(token, user) {
-        let result = await module.exports.db.collection(sessionsCollectionStr).findOne({[Constants.USER_PRIMARY_KEY]:user, [Constants.AUTH_TOKEN_KEY]:token});
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_SESSIONS).findOne({[Constants.USER_PRIMARY_KEY]:user, [Constants.AUTH_TOKEN_KEY]:token});
         if (result) {
             return true
         }
@@ -155,11 +151,10 @@ const load = async () => {
     /**
      * Destroy an active session (deauthenticates all future calls using the provided token)
      *
-     * @param token {String} Token to be authenticated
-     * @param user {String} Primary key identifying the user to be checked
+     * @param token {String} Token to be de-authenticated
      */
     module.exports.destroySession = async function(token) {
-        let result = await module.exports.db.collection(sessionsCollectionStr).findOneAndDelete({[Constants.AUTH_TOKEN_KEY]:token});
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_SESSIONS).findOneAndDelete({[Constants.AUTH_TOKEN_KEY]:token});
         if (result.value) {
             return result
         }
@@ -167,6 +162,44 @@ const load = async () => {
     }
 
     /**
+     * Generate a nonce used to reset a forgotten password
+     *
+     * @param email {String} Email associated with the account that will reset password
+     */
+    module.exports.generatePasswordRecoveryNonce = async function(email) {
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_USERS).findOne({[Constants.USER_PRIMARY_KEY]:email});
+        if (result == null) {
+            logger.error("generatePasswordRecoveryNonce PK not found!");
+            return null;
+        }
+        let nonce = serverUtils.generateToken(Constants.AUTH_TOKEN_LENGTH);
+        result = await module.exports.db.collection(Constants.MONGO_COLLECTION_PENDING_RECOVER_PASS).insertOne({
+            [Constants.USER_PRIMARY_KEY]:email, 
+            "passwordNonce":nonce,
+            [Constants.TIMESTAMP_KEY]:Date.now()
+        })
+        logger.debug("generatePasswordRecoveryNonce insertOne result =", result);
+        return result.ops[0]["passwordNonce"];
+    }
+
+    /**
+     * Reset a forgotten password using the nonce
+     *
+     * @param nonce {String} Nonce generated with getPasswordRecoveryNonce
+     * @param newPassword {String} New password to write to database
+     */
+    module.exports.recoverPassword = async function(nonce, newPassword) {
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_PENDING_RECOVER_PASS).findOneAndDelete({"passwordNonce":nonce});
+        if (result.value == null) {
+            return null;
+        }
+        let aux = result.value;
+        result = await module.exports.db.collection(Constants.MONGO_COLLECTION_USERS).findOneAndUpdate(
+            {[Constants.USER_PRIMARY_KEY]:aux[Constants.USER_PRIMARY_KEY]},
+            {"$set":{[Constants.USER_PASSWORD_KEY]:newPassword}}
+        );
+        return result.value;
+
      * Get all stored date related to a user
      *
      * @param user {String} Primary key identifying the user
