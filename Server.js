@@ -16,6 +16,7 @@ const polylineDecode = require('decode-google-map-polyline');
 // JSON via post
 const bodyParser = require('body-parser');
 const { Logger } = require('mongodb');
+const { exit } = require('process');
 
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
@@ -568,6 +569,9 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
 let port = process.env.PORT;
 if (port == undefined) port = Constants.SERVER_PORT_DEFAULT;
 
+if (process.argv.length > 2 &&  process.argv[2] == '--dryrun') {
+    exit(0);
+}
 logger.info("Starting server...");
 server.listen(port);
 logger.info("[Server] Listening on port " + port);
