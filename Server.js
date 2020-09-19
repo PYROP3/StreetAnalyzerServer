@@ -16,6 +16,7 @@ const polylineDecode = require('decode-google-map-polyline');
 // JSON via post
 const bodyParser = require('body-parser');
 const { Logger } = require('mongodb');
+
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
 
@@ -110,16 +111,24 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
         sendErrorMessage("PrimaryKeyInUse", req, res); //TODO find a better way to reply
         return 
     }
+
+    if (data[Constants.USER_PIC_KEY] == null) {
+        logger.info("User did not supply pic, using default");
+        data[Constants.USER_PIC_KEY] = serverUtils.getDefaultProfilePic();
+    }
+
     var newUser = new userModel.User(
-        data['email'], 
-        data['name'], 
+        data[Constants.USER_PRIMARY_KEY], 
+        data[Constants.USER_NAME_KEY], 
         serverUtils.saltAndHashPassword(
-            data['email'], 
-            data['password']
-        )
+            data[Constants.USER_PRIMARY_KEY], 
+            data[Constants.USER_PASSWORD_KEY]
+        ),
+        data[Constants.USER_PIC_KEY]
     ).toJSON();
     newUser['authToken'] = serverUtils.generateToken(32);
-    logger.info("Creating user : ", newUser[Constants.USER_PRIMARY_KEY]);
+    logger.info("Creating user : " + newUser[Constants.USER_PRIMARY_KEY]);
+    logger.debug("Creating user :", newUser);
     let result = await mongo.db.collection('pendingUsers').insertOne(newUser);
     if (result == null) {
         sendErrorMessage(1, req, res);
@@ -154,19 +163,29 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
         auth = auth['value'];
         logger.info("Validating user : ", auth);
         delete(auth['authToken']);
-        await mongo.db.collection('users').insertOne(new userModel.User(auth).toJSON());
+        await mongo.db.collection('users').insertOne(new userModel.User(
+            auth[Constants.USER_PRIMARY_KEY], 
+            auth[Constants.USER_NAME_KEY],  
+            auth[Constants.USER_PASSWORD_KEY],
+            auth[Constants.USER_PIC_KEY]
+        ).toJSON());
         sendErrorMessage(0, req, res); //TODO find a better way to reply
     }
 });
 
 server.post(Constants.AUTH_REQUEST, async function(req, res) {
     let data = req.body;
-    // TODO use SHA256 of password
     let authResult = await mongo.createSession(data[Constants.USER_PRIMARY_KEY], data[Constants.USER_PASSWORD_KEY]);
-    logger.debug("Authentication result for " + JSON.stringify(data) + " is " + String(authResult))
+    logger.debug("Authentication result for " + JSON.stringify(data) + " is ", authResult)
     if (typeof(authResult) === 'string') {
-        res.status(200).header("Content-Type", "application/json").send(JSON.stringify({[Constants.AUTH_TOKEN_KEY]:authResult}));
+        let userData = await mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
+        delete(userData[Constants.USER_PASSWORD_KEY]) // Remove user password from response
+        delete(userData["_id"]) // Remove mongo document id
+        logger.debug("Got user data =", userData)
+        userData[Constants.AUTH_TOKEN_KEY] = authResult;
+        res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
+        logger.debug("Authentication result for " + JSON.stringify(data) + " is", authResult)
         sendErrorMessage(authResult['id'], req, res);
     }
 });
@@ -293,7 +312,8 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"]))
 
     for(let i = 0; i < (data["pontos"]).length; i++){
-        if(data["pontos"][i][0] > 180 || data["pontos"][i][0] < -180 || data["pontos"][i][1] > 90 || data["pontos"][i][1] < -90){
+        if(data["pontos"][i][1] > 180 || data["pontos"][i][1] < -180 || data["pontos"][i][0] > 90 || data["pontos"][i][0] < -90){
+            logger.debug("Unexpected coordinates:", data)
             sendErrorMessage(5, req, res);
             return;
         }
@@ -306,7 +326,7 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
 
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
-        "--coordinates"    , data["pontos"].map(coord => coord.join(",")).join(" "),
+        "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
         "--overlay_folder" , serverUtils.fetchFile("/overlay/"),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
