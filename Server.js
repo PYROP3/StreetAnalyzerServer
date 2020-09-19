@@ -209,6 +209,54 @@ server.get(Constants.DEAUTH_REQUEST, async function(req, res) {
     sendErrorMessage(0, req, res); //TODO find a better way to reply
 });
 
+server.post(Constants.RECOVER_PASS_NONCE_REQUEST, async function(req, res) {
+    let data = req.body;
+    logger.info("Password recovery requested for email " + data[Constants.USER_PRIMARY_KEY]);
+    
+    let findResult = await mongo.db.collection(Constants.MONGO_COLLECTION_USERS).findOne({[Constants.USER_PRIMARY_KEY]:data[Constants.USER_PRIMARY_KEY]});
+    if (findResult == null) {
+        logger.info("Password recovery requested for email " + data[Constants.USER_PRIMARY_KEY] + " not found");
+        sendErrorMessage("NoSuchPrimaryKey", req, res); //TODO find a better way to reply
+        return 
+    }
+
+    let result = await mongo.generatePasswordRecoveryNonce(data[Constants.USER_PRIMARY_KEY]);
+    if (result == null) {
+        sendErrorMessage(1, req, res);
+    } else {
+        sendErrorMessage(0, req, res); //TODO find a better way to reply
+        let aux = findResult;
+        aux["passwordNonce"] = result;
+        //TODO gerar um email apropriado para recuperação de senha
+        loadTemplate('recovery', aux).then((results) => {
+            return Promise.all(results.map((result) =>{         
+                mailer.sendMail({
+                    from: Constants.SOURCE_EMAIL_ADDRESS,
+                    to: findResult['email'],
+                    subject: 'Street analyzer account recovery',
+                    html: result.email.html,
+                });
+            }));
+        });
+    }
+});
+
+server.post(Constants.RECOVER_PASS_REQUEST, async function(req, res) { // APP ver.
+    let data = req.body;
+    // TODO use SHA256 of password
+    let authResult = await mongo.recoverPassword(data["token"], data[Constants.USER_PASSWORD_KEY]);
+    logger.debug("Password recovery result for " + JSON.stringify(data) + " is " + String(authResult))
+    if (authResult) {
+        sendErrorMessage(0, req, res)
+    } else {
+        sendErrorMessage(1, req, res);
+    }
+});
+
+server.get(Constants.RECOVER_PASS_REQUEST, async function(req, res) {
+    sendErrorMessage("NotImplemented", req, res);
+});
+
 server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
     var query = req.query;
     query.minLatitude   = parseFloat(query.minLatitude);
