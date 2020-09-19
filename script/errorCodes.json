@@ -66,7 +66,7 @@
         "Data": {
             "English":{
                 "PrettyName": "Argument Type Error",
-            "Description": "One of the supplied arguments is in an unexpected format"
+                "Description": "One of the supplied arguments is in an unexpected format"
             },
             "Portugues":{
                 "PrettyName": "Erro de tipo de argumento",
@@ -266,6 +266,21 @@
             "Portugues":{
                 "PrettyName": "Não implementado",
                 "Description": "Esta funcionalidade não está disponível ainda"
+            }
+        }
+    },
+    {
+        "id":18,
+        "Name": "ActiveSessionFound",
+        "HttpReturn": 409,
+        "Data": {
+            "English":{
+                "PrettyName": "Active Session Found",
+                "Description": "There is already a session for this user"
+            },
+            "Portugues":{
+                "PrettyName": "Sessão ativa encontrada",
+                "Description": "Já existe uma sessão para este usuário"
             }
         }
     }
