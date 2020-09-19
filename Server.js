@@ -10,10 +10,13 @@ const userModel = require("./mongodb/model/User.js");
 const serverUtils = require("./util/Util.js");
 const logger = require("./util/Logger.js").logger;
 const mailer = require("./util/MailerHelper.js");
+const PosixMQ = require('posix-mq');
+const polylineDecode = require('decode-google-map-polyline');
 
 // JSON via post
 const bodyParser = require('body-parser');
-const { isNull, isNullOrUndefined } = require('util');
+const { Logger } = require('mongodb');
+
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
 
@@ -202,8 +205,56 @@ server.get(Constants.DEAUTH_REQUEST, async function(req, res) {
         sendErrorMessage("SessionNotFound", req, res);
         return;
     }
+    
+    sendErrorMessage(0, req, res); //TODO find a better way to reply
+});
 
-    sendErrorMessage(0, req, res); //TODO find a better way to replyc
+server.post(Constants.RECOVER_PASS_NONCE_REQUEST, async function(req, res) {
+    let data = req.body;
+    logger.info("Password recovery requested for email " + data[Constants.USER_PRIMARY_KEY]);
+    
+    let findResult = await mongo.db.collection(Constants.MONGO_COLLECTION_USERS).findOne({[Constants.USER_PRIMARY_KEY]:data[Constants.USER_PRIMARY_KEY]});
+    if (findResult == null) {
+        logger.info("Password recovery requested for email " + data[Constants.USER_PRIMARY_KEY] + " not found");
+        sendErrorMessage("NoSuchPrimaryKey", req, res); //TODO find a better way to reply
+        return 
+    }
+
+    let result = await mongo.generatePasswordRecoveryNonce(data[Constants.USER_PRIMARY_KEY]);
+    if (result == null) {
+        sendErrorMessage(1, req, res);
+    } else {
+        sendErrorMessage(0, req, res); //TODO find a better way to reply
+        let aux = findResult;
+        aux["passwordNonce"] = result;
+        //TODO gerar um email apropriado para recuperação de senha
+        loadTemplate('recovery', aux).then((results) => {
+            return Promise.all(results.map((result) =>{         
+                mailer.sendMail({
+                    from: Constants.SOURCE_EMAIL_ADDRESS,
+                    to: findResult['email'],
+                    subject: 'Street analyzer account recovery',
+                    html: result.email.html,
+                });
+            }));
+        });
+    }
+});
+
+server.post(Constants.RECOVER_PASS_REQUEST, async function(req, res) { // APP ver.
+    let data = req.body;
+    // TODO use SHA256 of password
+    let authResult = await mongo.recoverPassword(data["token"], data[Constants.USER_PASSWORD_KEY]);
+    logger.debug("Password recovery result for " + JSON.stringify(data) + " is " + String(authResult))
+    if (authResult) {
+        sendErrorMessage(0, req, res)
+    } else {
+        sendErrorMessage(1, req, res);
+    }
+});
+
+server.get(Constants.RECOVER_PASS_REQUEST, async function(req, res) {
+    sendErrorMessage("NotImplemented", req, res);
 });
 
 server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
@@ -308,7 +359,6 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"]))
     logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"]))
 
-
     for(let i = 0; i < (data["pontos"]).length; i++){
         if(data["pontos"][i][1] > 180 || data["pontos"][i][1] < -180 || data["pontos"][i][0] > 90 || data["pontos"][i][0] < -90){
             logger.debug("Unexpected coordinates:", data)
@@ -363,6 +413,153 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
         res.send("Obrigado pela contribuição, " + data["usuario"] + "!")
     });
 
+});
+
+server.get(Constants.ROUTE_REQUEST, async function(req, res) {
+    // TODO uncomment authentication before deploy
+    //let authToken = serverUtils.parseAuthToken(req.get("Authorization"));
+    //logger.debug("Got authorization = " + req.get("Authorization"));
+
+    //if (authToken == null) {
+    //    sendErrorMessage("MalformedToken", req, res);
+    //    return;
+    //}
+    
+    let query = req.query;
+    let origin = req.origin;
+    let destination = req.destination;
+    let key = process.env.MAPS_API_KEY;
+    // TODO add optional parameters
+
+    // Make a request to Google Directions API
+    // FIXME REQUEST_DENIED: You must enable Billing on the Google Cloud Project 
+    // at https://console.cloud.google.com/project/_/billing/enable 
+    // Learn more at https://developers.google.com/maps/gmp-get-started
+    let paramString = serverUtils.format("origin=%s&destination=%s&key=%s", origin, destination, key);
+    let reqUrl = "https://maps.googleapis.com/maps/api/directions/json?" + paramString;
+    logger.debug("Making request to Directions: " + reqUrl);
+
+    let directionResponse = await serverUtils.request(reqUrl);
+    logger.debug("Got response: " + directionResponse);
+
+    directionResponse = JSON.parse(directionResponse);
+    if (directionResponse['status'] != "OK") {
+        logger.error("Error in Directions API");
+        //sendErrorMessage("UnknownError", req, res);
+        //return;
+        // TODO remove mocked response before deploy
+        directionResponse = {...Constants.MOCK_DIRECTIONS_RESPONSE};
+    }
+
+    // Open message queues
+    const queueToken = String(Date.now());
+    logger.debug("Queue token = " + queueToken);
+
+    let mqN2P = new PosixMQ();
+    mqN2P.open({
+        name: '/routeN2P' + queueToken,
+        create: true,
+        mode: '0777',
+        maxmsgs: 10,
+        msgsize: 40
+    });
+
+    let mqP2N = new PosixMQ();
+    mqP2N.open({
+        name: '/routeP2N' + queueToken,
+        create: true,
+        mode: '0777',
+        maxmsgs: 10,
+        msgsize: 20
+    });
+
+    // Spawn python process that will take in line segments via IPC-MQ and output quality data for each tuple (queueToken as param)
+    const python = spawn(
+        process.env.PYTHON_BIN,
+        [
+            serverUtils.fetchFile(Constants.SCRIPT_ROUTE),
+            '--queueTag', queueToken
+        ]
+    );
+
+    // Collect data from script
+    python.stdout.on('data', function (data) {
+        logger.debug('[Server] Pipe data from python script : ' + data);
+    });
+
+    // Collect error data from script (for debugging)
+    python.stderr.on('data', function (data) {
+        logger.error('[Server][python/stderr] :' + data);
+    });
+
+    // Send status of operation to user on close
+    python.on('close', (code) => {
+        logger.debug(`[Server] Script exit code : ${code}`);
+    });
+
+    // TODO it might be possible to use "overview_polyline" attribute of each route instead of iterating over every step
+    // For each route available...
+    directionResponse['routes'].reduce((promiseChain, element, index, self) => {
+        return promiseChain.then(() => new Promise((resolve, reject) => {
+            // Routes are a collection of legs
+            element['legs'].forEach((_element, _index, _self) => {
+                // Legs are a collection of steps
+                _element['steps'].forEach((__element, __index, __self) => {
+                    // Steps are a set of lines (encoded polyline)
+                    logger.debug("Polyline = " + __element['polyline']['points']);
+                    polylineDecode(__element['polyline']['points']).reduce((___promiseChain, ___element, ___index, ___self) => {
+                        return ___promiseChain.then(() => new Promise((___resolve, ___reject) => {
+                            if (___index > 0) {
+                                var _start = ___self[___index-1];
+                                var _end = ___self[___index];
+                                logger.debug(serverUtils.format("Step: %s,%s to %s,%s", _start['lat'], _start['lng'], _end['lat'], _end['lng']));
+                
+                                // Send tuple to python script
+                                var _msg = serverUtils.format("%s %s %s %s", _start['lat'], _start['lng'], _end['lat'], _end['lng']);
+                                logger.debug("Msg = " + _msg + " (" + _msg.length + ")");
+                                mqN2P.push(_msg);
+                                
+                                // Get response related to this step
+                                serverUtils.getMessageFromQueue(mqP2N).then((msg) => {
+                                    logger.debug(serverUtils.format("Step %s, quality = %s", ___index, msg));
+                                    if (___index > 1) {
+                                        __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]].push(parseFloat(msg));
+                                    } else {
+                                        __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]] = [parseFloat(msg)];
+                                    }
+                                    ___resolve();
+                                });
+                            } else {
+                                ___resolve();
+                            }
+                        }));
+                    }, Promise.resolve()).then(() => {
+                        logger.debug("Resolve called at most internal level");
+                        resolve();
+                    });
+                    // TODO improvement: add callback at end to calculate average for this step (can be done on app instead)
+                });
+                // TODO improvement: add callback at end to calculate average for this leg (can be done on app instead)
+                //_self[_index][Constants.QUALITY_DATA_TAG] = _element['steps'].reduce((a, val) => a + val[Constants.QUALITY_DATA_TAG]) / _element['steps'].length;
+                //logger.debug(serverUtils.format("Got avg quality for leg %s of route %s = %s", _index, index, _self[_index][Constants.QUALITY_DATA_TAG]));
+            });
+            // TODO improvement: add callback at end to calculate average for this route (can be done on app instead)
+            //self[index][Constants.QUALITY_DATA_TAG] = element['legs'].reduce((a, val) => a + val[Constants.QUALITY_DATA_TAG]) / element['legs'].length;
+            //logger.debug(serverUtils.format("Got avg quality for route %s = %s", index, self[index][Constants.QUALITY_DATA_TAG]));
+        }));
+    }, Promise.resolve()).then(() => {
+        // Inform python script to exit
+        mqN2P.push("EXIT");
+    
+        // Close message queues
+        mqP2N.unlink();
+        mqP2N.close();
+        mqN2P.unlink();
+        mqN2P.close();
+
+        // Reply to user
+        res.status(200).header("Content-Type", "application/json").send(directionResponse);
+    });
 });
 
 // =================================== End page require ===================================
