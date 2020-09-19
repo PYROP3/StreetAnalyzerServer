@@ -241,6 +241,36 @@
     },
     {
         "id":16,
+        "Name": "NoSuchPrimaryKey",
+        "HttpReturn": 400,
+        "Data": {
+            "English":{
+                "PrettyName": "Unknown email",
+                "Description": "There is no account associated with that email"
+            },
+            "Portugues":{
+                "PrettyName": "Email desconhecido",
+                "Description": "Não existe uma conta associada a esse email"
+            }
+        }
+    },
+    {
+        "id":17,
+        "Name": "NotImplemented",
+        "HttpReturn": 501,
+        "Data": {
+            "English":{
+                "PrettyName": "Not implemented",
+                "Description": "This functionality is not yet available"
+            },
+            "Portugues":{
+                "PrettyName": "Não implementado",
+                "Description": "Esta funcionalidade não está disponível ainda"
+            }
+        }
+    },
+    {
+        "id":18,
         "Name": "ActiveSessionFound",
         "HttpReturn": 409,
         "Data": {
