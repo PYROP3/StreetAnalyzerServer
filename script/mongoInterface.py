@@ -21,12 +21,36 @@ class MongoInterface:
 
         self.collection = self.db[mode]
 
+        # FIXME caching may cause race conditions
+        self.cache = []
+
+        self.max_cache = 5
+
     def getTile(self, lat, long, quad):
+        # Check if tile is not cached
+        _tile = None
+        new_key = "{}_{}_{}".format(lat, long, quad)
+        for key, segment in self.cache:
+            if key == new_key:
+                _tile = segment
+                break
+
+        # If not found yet, look in database
+        if _tile is None:
+            _tile = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
+            if _tile:
+                # Update cache
+                while len(self.cache) >= self.max_cache:
+                    self.cache.pop(0)
+                self.cache.append((new_key, _tile['tile']))
+        
         _tile = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
+
         if _tile:
             return _tile['tile']
         else:
             raise FileNotFoundError("Tile for {}:{},{} not found".format(quad, lat, long))
+
 
     def saveTile(self, lat, long, quad, tile):
         _tile = Binary(tile)
