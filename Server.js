@@ -426,9 +426,7 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
     //    return;
     //}
     
-    let query = req.query;
-    let origin = req.origin;
-    let destination = req.destination;
+    let route = req.route;
     let key = process.env.MAPS_API_KEY;
     // TODO add optional parameters
 
@@ -436,9 +434,8 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
     // FIXME REQUEST_DENIED: You must enable Billing on the Google Cloud Project 
     // at https://console.cloud.google.com/project/_/billing/enable 
     // Learn more at https://developers.google.com/maps/gmp-get-started
-    let paramString = serverUtils.format("origin=%s&destination=%s&key=%s", origin, destination, key);
-    let reqUrl = "https://maps.googleapis.com/maps/api/directions/json?" + paramString;
-    logger.debug("Making request to Directions: " + reqUrl);
+    let reqUrl = serverUtils.format(Constants.ROUTE_API_ENDPOINT, route, key);
+    // logger.debug("Making request to Directions: " + reqUrl);
 
     let directionResponse = await serverUtils.request(reqUrl);
     logger.debug("Got response: " + directionResponse);
@@ -504,41 +501,31 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
         return promiseChain.then(() => new Promise((resolve, reject) => {
             // Routes are a collection of legs
             element['legs'].forEach((_element, _index, _self) => {
-                // Legs are a collection of steps
-                _element['steps'].forEach((__element, __index, __self) => {
-                    // Steps are a set of lines (encoded polyline)
-                    logger.debug("Polyline = " + __element['polyline']['points']);
-                    polylineDecode(__element['polyline']['points']).reduce((___promiseChain, ___element, ___index, ___self) => {
-                        return ___promiseChain.then(() => new Promise((___resolve, ___reject) => {
-                            if (___index > 0) {
-                                var _start = ___self[___index-1];
-                                var _end = ___self[___index];
-                                logger.debug(serverUtils.format("Step: %s,%s to %s,%s", _start['lat'], _start['lng'], _end['lat'], _end['lng']));
-                
-                                // Send tuple to python script
-                                var _msg = serverUtils.format("%s %s %s %s", _start['lat'], _start['lng'], _end['lat'], _end['lng']);
-                                logger.debug("Msg = " + _msg + " (" + _msg.length + ")");
-                                mqN2P.push(_msg);
-                                
-                                // Get response related to this step
-                                serverUtils.getMessageFromQueue(mqP2N).then((msg) => {
-                                    logger.debug(serverUtils.format("Step %s, quality = %s", ___index, msg));
-                                    if (___index > 1) {
-                                        __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]].push(parseFloat(msg));
-                                    } else {
-                                        __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]] = [parseFloat(msg)];
-                                    }
-                                    ___resolve();
-                                });
+                // Legs are a collection of points
+                _element['points'].forEach((__element, __index, __self) => {
+                    if (__index > 0) {
+                        var _start = __self[__index-1];
+                        var _end = __self[__index];
+                        logger.debug(serverUtils.format("Step: %s,%s to %s,%s", _start['lat'], _start['lng'], _end['lat'], _end['lng']));
+        
+                        // Send tuple to python script
+                        var _msg = serverUtils.format("%s %s %s %s", _start['lat'], _start['lng'], _end['lat'], _end['lng']);
+                        logger.debug("Msg = " + _msg + " (" + _msg.length + ")");
+                        mqN2P.push(_msg);
+                        
+                        // Get response related to this step
+                        serverUtils.getMessageFromQueue(mqP2N).then((msg) => {
+                            logger.debug(serverUtils.format("Step %s, quality = %s", ___index, msg));
+                            if (__index > 1) {
+                                __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]].push(parseFloat(msg));
                             } else {
-                                ___resolve();
+                                __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]] = [parseFloat(msg)];
                             }
-                        }));
-                    }, Promise.resolve()).then(() => {
-                        logger.debug("Resolve called at most internal level");
-                        resolve();
-                    });
-                    // TODO improvement: add callback at end to calculate average for this step (can be done on app instead)
+                            ___resolve();
+                        });
+                    } else {
+                        ___resolve();
+                    }
                 });
                 // TODO improvement: add callback at end to calculate average for this leg (can be done on app instead)
                 //_self[_index][Constants.QUALITY_DATA_TAG] = _element['steps'].reduce((a, val) => a + val[Constants.QUALITY_DATA_TAG]) / _element['steps'].length;
