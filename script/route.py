@@ -36,30 +36,41 @@ def reviewLineSegment(startLat, startLong, endLat, endLong):
         DEBUG=DEBUG
     )
 
+    required_corners = segments.expand_corners(min(startLong, endLong), min(startLat, endLat), max(startLong, endLong), max(startLat, endLat))
+
+    required_delta_x = abs(required_corners[1][0] - required_corners[0][0])
+    required_delta_y = abs(required_corners[1][1] - required_corners[0][1])
+
     samples = []
+
+    x00 = int(segments.__rangeMap(required_corners[0][0], required_corners[1][0], startLong / segments.resolution, 0, required_delta_x * segments.dpb))
+    y00 = int(segments.__rangeMap(required_corners[0][1], required_corners[1][1], startLat / segments.resolution, required_delta_y * segments.dpb, 0))
+    x0 = x00
+    y0 = y00
+    x1 = int(segments.__rangeMap(required_corners[0][0], required_corners[1][0], endLong / segments.resolution, 0, required_delta_x * segments.dpb))
+    y1 = int(segments.__rangeMap(required_corners[0][1], required_corners[1][1], endLat / segments.resolution, required_delta_y * segments.dpb, 0))
 
     # Bresenhams algorithm
     # TODO this code is similar to logTrip.py, find a way to reuse it
-    dx = abs(endLong - startLong)
-    sx = 1 if startLong < endLong else -1
-    dy = -abs(endLat - startLat)
-    sy = 1 if startLat < endLat else -1
+    dx = abs(x1 - x0)
+    sx = 1 if x0 < x1 else -1
+    dy = -abs(y1 - y0)
+    sy = 1 if y0 < y1 else -1
     err = dx + dy
     if DEBUG: print("Bresenham: dx={}, sx={}, dy={}, sy={}, err={}".format(dx, sx, dy, sy, err))
-    while (endLong != startLong or endLat != startLat):
-        # Process (startLong, startLat)
-        canvas_x = startLong
-        canvas_y = startLat
+    while (x1 != x0 or y1 != y0):
+        # Process (x0, y0)
+        canvas_x = x0
+        canvas_y = y0
         this_sample = float(overlay_canvas[canvas_y, canvas_x, mu_channel])/255.
         samples.append(this_sample)
-        if DEBUG: print("Canvas @ {}, {} => mu = {}[sto {}]; sig = {}[sto {}]".format(canvas_x, canvas_y, prev_mu, overlay_canvas[canvas_y, canvas_x, mu_channel], prev_sig, overlay_canvas[canvas_y, canvas_x, sig_channel]))
         e2 = 2*err
         if (e2 >= dy):
             err += dy
-            startLong += sx
+            x0 += sx
         if (e2 <= dx):
             err += dx
-            startLat += sy
+            y0 += sy
     seg_avg = sum(samples) / len(samples)
     if DEBUG: print("Line segment average = {}".format(seg_avg))
     return seg_avg
