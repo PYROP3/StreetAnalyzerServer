@@ -23,7 +23,6 @@ util_masks = {
 
 source_mode = False
 run_mode = "sigma_mu"
-fnt = ImageFont.truetype('arial.ttf', 40)
 
 r_channel = 0
 g_channel = 1
