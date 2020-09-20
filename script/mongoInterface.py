@@ -16,7 +16,7 @@ class MongoInterface:
 
     def getSegment(self, lat, long, quad):
         _seg = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
-        print("Get segment: " + str(_seg))
+        #print("Get segment: " + str(_seg))
         if _seg:
             return _seg['segment']
         else:
@@ -26,7 +26,7 @@ class MongoInterface:
         _doc = self.collection.find_one_and_update({'lat':lat, 'long':long, 'quad':quad}, {'$set': {'segment':segment}})
         if not _doc: # Create
             _doc = self.collection.insert_one({'lat':lat, 'long':long, 'quad':quad, 'segment':segment})
-        print("Save segment: " + str(_doc))
+        #print("Save segment: " + str(_doc))
 
 if __name__ == "__main__":
     this = MongoInterface()
