@@ -56,13 +56,11 @@ def load_tiles(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb, DEBUG
 
     required_corners = expand_corners(min_x, min_y, max_x, max_y, resolution=resolution)
 
-    print(required_corners)
-
     required_delta_x = abs(required_corners[1][0] - required_corners[0][0]) + 0
     required_delta_y = abs(required_corners[1][1] - required_corners[0][1]) + 0
 
     try:
-        overlay_canvas = np.zeros((required_delta_y * dpb, required_delta_x * dpb, 3), dtype=np.uint8)
+        overlay_canvas = np.zeros((required_delta_y * dpb, required_delta_x * dpb, 3))
     except ValueError:
         raise MemoryError
 
@@ -75,7 +73,7 @@ def load_tiles(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb, DEBUG
         for _y in range(required_delta_y):
             y = _y + __y - __sign(min_y)
 
-            overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), alias_append)
+            overlay_alias = "{}_{}_{}".format(__quad(x, y), abs(y), abs(x))
             if DEBUG: print("Opening {}".format(overlay_alias))
 
             try: # Get tile if it exists
@@ -83,7 +81,7 @@ def load_tiles(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb, DEBUG
                 _tile = pickle.loads(_tile)
                 overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = _tile[:, :, :]
             except: # Create new tile if not found
-                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = default_empty_tile[:, :, :]
+                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = default_empty_tile[:,:,:]
 
     return overlay_canvas
 
