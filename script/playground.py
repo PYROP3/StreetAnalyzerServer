@@ -1,6 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
 import mongoInterface
 import segments
+import numpy as np
+
+mu_channel=0
 
 # [[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084]]
 
@@ -24,6 +27,8 @@ overlay_canvas = segments.load_segments (
     DEBUG=True,
     source_mode=False
 )
+
+print("Mu range: {} <> {}".format(np.min(overlay_canvas[:, :, mu_channel]), np.max(overlay_canvas[:, :, mu_channel])))
 
 segments.save_overlay(
     req_x_min,

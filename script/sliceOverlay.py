@@ -9,13 +9,13 @@ import seaborn as sns; sns.set()
 from matplotlib import pyplot as plt
 
 from errorHandler import ErrorHandler
-import segments
+import tiles
 
 DEBUG = False
 
 mu_channel = 0
 sig_channel = 1
-util_channel = 2
+hits_channel = 2
 
 util_masks = {
     "visited":1
@@ -53,7 +53,6 @@ parser.add_argument('x_min', type=coord_dtype, nargs=1, help='Minimum X coordina
 parser.add_argument('y_min', type=coord_dtype, nargs=1, help='Minimum Y coordinate of bounding box')
 parser.add_argument('x_max', type=coord_dtype, nargs=1, help='Maximum X coordinate of bounding box')
 parser.add_argument('y_max', type=coord_dtype, nargs=1, help='Maximum Y coordinate of bounding box')
-parser.add_argument('--overlay_folder', type=str, nargs=1, help='Path to overlay folder')
 parser.add_argument('--errors_file', type=str, nargs=1, help='Path to errors JSON file')
 parser.add_argument('--DEBUG', dest='DEBUG', action='store_const', const=True, default=False)
 
@@ -75,15 +74,12 @@ req_y_min = args.y_min[0]
 req_y_max = args.y_max[0]
 
 try:
-    overlay_canvas = segments.load_segments (
+    overlay_canvas = tiles.load_tiles (
         req_x_min,
         req_y_min,
         req_x_max,
         req_y_max,
-        alias_append="_"+run_mode,
-        overlay_path=args.overlay_folder[0],
-        DEBUG=DEBUG,
-        source_mode=source_mode
+        DEBUG=DEBUG
     )
 except MemoryError:
     err.exitOnError("MemoryError")
@@ -101,16 +97,19 @@ aux_canvas = overlay_canvas[:, :, :]
 # Convert sigma-mu to gradient
 if run_mode == "sigma_mu":
     if DEBUG:
-        if (np.max(overlay_canvas[:, :, util_channel]) == 0):
+        if (np.max(overlay_canvas[:, :, hits_channel]) == 0):
             print("None active!")
         else:
             print("Found active!")
         print("Mu range: {} <> {}".format(np.min(overlay_canvas[:, :, mu_channel]), np.max(overlay_canvas[:, :, mu_channel])))
 
     try:
-        _mu = overlay_canvas[:, :, mu_channel] / 255.
+        _mu = overlay_canvas[:, :, mu_channel]
     except MemoryError:
         err.exitOnError("MemoryError")
+    
+    print("Mu range: {} <> {}".format(np.min(_mu), np.max(_mu)))
+    print("Corner: {}".format(_mu[1,1]))
 
     fig = plt.figure(1, figsize=(overlay_canvas.shape[1], overlay_canvas.shape[0]), dpi=1)
     ax = sns.heatmap(np.array(_mu), xticklabels=False, yticklabels=False, cbar=False, cmap=sns.diverging_palette(10, 150, sep=80), vmin=0., vmax=1.)
@@ -125,7 +124,7 @@ overlay_canvas_img = Image.fromarray(aux_canvas)
 
 if DEBUG: overlay_canvas_img.show()
 
-(left, lower, right, upper) = segments.bounding_box(req_x_min, req_y_min, req_x_max, req_y_max)
+(left, lower, right, upper) = tiles.bounding_box(req_x_min, req_y_min, req_x_max, req_y_max)
 
 if DEBUG: print("Cropping {}, {}, {}, {}".format(left, upper, right, lower))
 
@@ -155,7 +154,7 @@ print(nonce, end="")
 #     sys.stdout.buffer.write(output.getvalue())
 
 # Testing
-# segments.save_overlay(
+# tiles.save_overlay(
 #     req_x_min,
 #     req_y_min,
 #     req_x_max,

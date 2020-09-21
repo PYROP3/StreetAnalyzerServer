@@ -1,8 +1,12 @@
 from pymongo import MongoClient
+from bson.binary import Binary
+from dotenv import load_dotenv
+
 import os
 
 class MongoInterface:
-    def __init__(self, mode='sigma_mu', prod=True):
+    def __init__(self, mode='pickle', prod=True):
+        load_dotenv()
         if prod:
             _env = os.environ
             
@@ -14,22 +18,21 @@ class MongoInterface:
 
         self.collection = self.db[mode]
 
-    def getSegment(self, lat, long, quad):
-        _seg = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
-        #print("Get segment: " + str(_seg))
-        if _seg:
-            return _seg['segment']
+    def getTile(self, lat, long, quad):
+        _tile = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
+        if _tile:
+            return _tile['tile']
         else:
-            FileNotFoundError("Segment for {}:{},{} not found".format(quad, lat, long))
+            FileNotFoundError("Tile for {}:{},{} not found".format(quad, lat, long))
 
-    def saveSegment(self, lat, long, quad, segment):
-        _doc = self.collection.find_one_and_update({'lat':lat, 'long':long, 'quad':quad}, {'$set': {'segment':segment}})
+    def saveTile(self, lat, long, quad, tile):
+        _tile = Binary(tile)
+        _doc = self.collection.find_one_and_update({'lat':lat, 'long':long, 'quad':quad}, {'$set': {'tile':_tile}})
         if not _doc: # Create
-            _doc = self.collection.insert_one({'lat':lat, 'long':long, 'quad':quad, 'segment':segment})
-        #print("Save segment: " + str(_doc))
+            _doc = self.collection.insert_one({'lat':lat, 'long':long, 'quad':quad, 'tile':_tile})
 
 if __name__ == "__main__":
     this = MongoInterface()
-    this.getSegment(10, 10, 'NE')
-    this.saveSegment(10, 10, 'NE', 'abc')
-    this.getSegment(10, 10, 'NE')
+    this.getTile(10, 10, 'NE')
+    this.saveTile(10, 10, 'NE', 'abc')
+    this.getTile(10, 10, 'NE')
