@@ -53,11 +53,3 @@ class interpolationGradient:
 
     def colorizeArray(self, points):
         return map(self.colorize, points)
-
-# from gradients import interpolationGradient
-# G = interpolationGradient()
-# G.add([235, 64, 52], 0)
-# G.add([235, 140, 52], 0.33)
-# G.add([235, 223, 52], 0.67)
-# G.add([162, 235, 52], 1)
-# G.sort()
