@@ -113,7 +113,7 @@ if run_mode == "sigma_mu":
         err.exitOnError("MemoryError")
 
     fig = plt.figure(1, figsize=(overlay_canvas.shape[1], overlay_canvas.shape[0]), dpi=1)
-    ax = sns.heatmap(np.array(_mu), xticklabels=False, yticklabels=False, cbar=False, cmap=sns.diverging_palette(10, 150, sep=80))
+    ax = sns.heatmap(np.array(_mu), xticklabels=False, yticklabels=False, cbar=False, cmap=sns.diverging_palette(10, 150, sep=80), vmin=0., vmax=1.)
     fig.tight_layout(pad=0)
     fig.canvas.draw()
     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
