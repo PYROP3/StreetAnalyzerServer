@@ -57,6 +57,10 @@ def convertAccelerometerData(data):
     _res = [np.fft.fftfreq(len(x))[np.argmax(np.abs(x))] for x in _mags]
     return [pseudoSigmoid(freq) for freq in _res]
 
+def printUnique(data):
+    unique, counts = np.unique(data, return_counts=True)
+    print(dict(zip(unique, counts)))
+
 parser = argparse.ArgumentParser(description='Store quality information for a series of coordinates.')
 parser.add_argument('--coordinates', type=coord_list_dtype, nargs='+', help='List of coordinates (x, y)', required=True)
 parser.add_argument('-d', '--accel_data', type=accel_dtype, nargs='+', help='List of accelerometer data', required=True, action='append')
@@ -100,10 +104,7 @@ overlay_canvas = tiles.load_tiles (
     req_y_min,
     req_x_max,
     req_y_max,
-    alias_append="_"+run_mode,
-    overlay_path=args.overlay_folder[0],
-    DEBUG=DEBUG,
-    source_mode=source_mode
+    DEBUG=DEBUG
 )
 if DEBUG: print("Done!")
 
@@ -120,6 +121,8 @@ except ValueError:
 update_mask_height, update_mask_width, _ = update_mask.shape
 
 update_mask[:, :, hits_channel] = 0
+
+hit_mask = np.zeros((update_mask_height, update_mask_width), dtype=np.uint8)
 
 # Generate offsets to cover radius
 offsets = []
@@ -165,20 +168,25 @@ for i, elem in enumerate(global_quality):
         prev_mu = overlay_canvas[canvas_y, canvas_x, mu_channel]
         prev_sig = overlay_canvas[canvas_y, canvas_x, sig_channel]
         prev_hits = overlay_canvas[canvas_y, canvas_x, hits_channel]
-        if DEBUG: print("Canvas @ {}, {} => mu = {}[sto {}]; sig = {}[sto {}]".format(canvas_x, canvas_y, prev_mu, overlay_canvas[canvas_y, canvas_x, mu_channel], prev_sig, overlay_canvas[canvas_y, canvas_x, sig_channel]))
+        if DEBUG: print("Canvas @ {}, {} => mu = {}; sig = {}; hits = {}".format(canvas_x, canvas_y, prev_mu, prev_sig, prev_hits))
         new_mu = (prev_mu * prev_hits + q) / (prev_hits + 1)
-        new_sig = (prev_hits - 1)/prev_hits * prev_sig + 1/(prev_hits + 1) * np.square(new_mu - prev_mu) # https://math.stackexchange.com/questions/102978/incremental-computation-of-standard-deviation
+        if prev_hits == 0:
+            new_sig = 0
+        else:
+            new_sig = (prev_hits - 1)/prev_hits * prev_sig + 1/(prev_hits + 1) * np.square(new_mu - prev_mu) # https://math.stackexchange.com/questions/102978/incremental-computation-of-standard-deviation
+
         update_mask[y0, x0, mu_channel] = new_mu
         update_mask[y0, x0, sig_channel] = new_sig
-        update_mask[y0, x0, hits_channel] += 1
+        hit_mask[y0][x0] = 1
+        #update_mask[y0, x0, hits_channel] += 1
         for o in offsets:
             nx = x0 + o[0] - 1
             ny = y0 + o[1] - 1
             if (nx >= 0 and nx < update_mask_width and ny >= 0 and ny < update_mask_height):
                 update_mask[ny, nx, mu_channel] = new_mu
                 update_mask[ny, nx, sig_channel] = new_sig
-                update_mask[ny, nx, hits_channel] += 1
-        if DEBUG: print("Canvas updated => mu = {}[sto {}]; sig = {}[sto {}]".format(new_mu, np.uint8(new_mu * 255), new_sig, np.uint8(np.sqrt(new_sig) * 255)))
+                hit_mask[ny][nx] = 1
+        if DEBUG: print("Canvas updated => mu = {}; sig = {}".format(new_mu, new_sig))
         e2 = 2*err
         if (e2 >= dy):
             err += dy
@@ -186,6 +194,10 @@ for i, elem in enumerate(global_quality):
         if (e2 <= dx):
             err += dx
             y0 += sy
+
+print("Previous max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
+update_mask[:,:,hits_channel] += hit_mask
+print("New max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
 
 # Apply gaussian filter over mask to spread quality data (?)
 #update_mask = update_mask * gauss_factor
@@ -197,11 +209,23 @@ if DEBUG:
     print("Mu  mask min = {}, max = {}".format(np.min(gaussed[:, :, mu_channel]), np.max(gaussed[:, :, mu_channel])))
     print("Sig mask min = {}, max = {}".format(np.min(gaussed[:, :, sig_channel]), np.max(gaussed[:, :, sig_channel])))
 
-mu_mask = gaussed[:, :, mu_channel] #1:-1, 1:-1
+mu_mask = gaussed[:, :, mu_channel]
 sig_mask = gaussed[:, :, sig_channel]
-overlay_canvas[:, :, mu_channel] = np.where(update_mask[:, :, hits_channel] == util_masks["visited"], mu_mask, overlay_canvas[:, :, mu_channel])
-overlay_canvas[:, :, sig_channel] = np.where(update_mask[:, :, hits_channel] == util_masks["visited"], sig_mask, overlay_canvas[:, :, sig_channel])
+np_hits = np.array(hit_mask)
+assert np_hits.shape == mu_mask.shape
+
+printUnique(np_hits)
+
+print("Before: {}".format(overlay_canvas[:,:,mu_channel]))
+printUnique(overlay_canvas[:,:,mu_channel])
+printUnique(mu_mask)
+
+overlay_canvas[:, :, mu_channel] = np.where(np_hits == 1, mu_mask, overlay_canvas[:, :, mu_channel])
+overlay_canvas[:, :, sig_channel] = np.where(np_hits == 1, sig_mask, overlay_canvas[:, :, sig_channel])
 overlay_canvas[:, :, hits_channel] = update_mask[:, :, hits_channel]
+
+print("After: {}".format(overlay_canvas[:,:,mu_channel]))
+printUnique(overlay_canvas[:,:,mu_channel])
 
 if DEBUG:
     if (np.max(overlay_canvas[:, :, hits_channel]) == 0):
@@ -210,7 +234,7 @@ if DEBUG:
         print("Found active!")
     print("Mu range: {} <> {}".format(np.min(overlay_canvas[:, :, mu_channel]), np.max(overlay_canvas[:, :, mu_channel])))
 
-# Split back into pieces and overwrite disk data
+# Saave to database
 tiles.save_overlay(
     req_x_min,
     req_y_min,

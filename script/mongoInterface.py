@@ -1,12 +1,15 @@
 from pymongo import MongoClient
 from bson.binary import Binary
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except:
+    load_dotenv = None
 
 import os
 
 class MongoInterface:
     def __init__(self, mode='pickle', prod=True):
-        load_dotenv()
+        if load_dotenv: load_dotenv()
         if prod:
             _env = os.environ
             
@@ -23,7 +26,7 @@ class MongoInterface:
         if _tile:
             return _tile['tile']
         else:
-            FileNotFoundError("Tile for {}:{},{} not found".format(quad, lat, long))
+            raise FileNotFoundError("Tile for {}:{},{} not found".format(quad, lat, long))
 
     def saveTile(self, lat, long, quad, tile):
         _tile = Binary(tile)
