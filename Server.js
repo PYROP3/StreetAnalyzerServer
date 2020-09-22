@@ -426,28 +426,30 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
     //    return;
     //}
     
-    let route = req.route;
-    let key = process.env.MAPS_API_KEY;
-    // TODO add optional parameters
+    // let route = req.route;
+    // let key = process.env.MAPS_API_KEY;
+    // // TODO add optional parameters
 
-    // Make a request to Google Directions API
-    // FIXME REQUEST_DENIED: You must enable Billing on the Google Cloud Project 
-    // at https://console.cloud.google.com/project/_/billing/enable 
-    // Learn more at https://developers.google.com/maps/gmp-get-started
-    let reqUrl = serverUtils.format(Constants.ROUTE_API_ENDPOINT, route, key);
-    // logger.debug("Making request to Directions: " + reqUrl);
+    // // Make a request to Google Directions API
+    // // FIXME REQUEST_DENIED: You must enable Billing on the Google Cloud Project 
+    // // at https://console.cloud.google.com/project/_/billing/enable 
+    // // Learn more at https://developers.google.com/maps/gmp-get-started
+    // let reqUrl = serverUtils.format(Constants.ROUTE_API_ENDPOINT, route, key);
+    // // logger.debug("Making request to Directions: " + reqUrl);
 
-    let directionResponse = await serverUtils.request(reqUrl);
-    logger.debug("Got response: " + directionResponse);
+    // let directionResponse = await serverUtils.request(reqUrl);
+    // logger.debug("Got response: " + directionResponse);
 
-    directionResponse = JSON.parse(directionResponse);
-    if (directionResponse['status'] != "OK") {
-        logger.error("Error in Directions API");
-        //sendErrorMessage("UnknownError", req, res);
-        //return;
-        // TODO remove mocked response before deploy
-        directionResponse = {...Constants.MOCK_DIRECTIONS_RESPONSE};
-    }
+    // directionResponse = JSON.parse(directionResponse);
+    // if (directionResponse['status'] != "OK") {
+    //     logger.error("Error in Directions API");
+    //     //sendErrorMessage("UnknownError", req, res);
+    //     //return;
+    //     // TODO remove mocked response before deploy
+    //     directionResponse = {...Constants.MOCK_DIRECTIONS_RESPONSE};
+    // }
+
+    let directionResponse = {...Constants.MOCK_DIRECTIONS_RESPONSE};
 
     // Open message queues
     const queueToken = String(Date.now());
@@ -473,7 +475,7 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
 
     // Spawn python process that will take in line segments via IPC-MQ and output quality data for each tuple (queueToken as param)
     const python = spawn(
-        process.env.PYTHON_BIN,
+        "python3",
         [
             serverUtils.fetchFile(Constants.SCRIPT_ROUTE),
             '--queueTag', queueToken
@@ -506,25 +508,25 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
                     if (__index > 0) {
                         var _start = __self[__index-1];
                         var _end = __self[__index];
-                        logger.debug(serverUtils.format("Step: %s,%s to %s,%s", _start['lat'], _start['lng'], _end['lat'], _end['lng']));
+                        logger.debug(serverUtils.format("Step: %s,%s to %s,%s", _start['latitude'], _start['longitude'], _end['latitude'], _end['longitude']));
         
                         // Send tuple to python script
-                        var _msg = serverUtils.format("%s %s %s %s", _start['lat'], _start['lng'], _end['lat'], _end['lng']);
+                        var _msg = serverUtils.format("%s %s %s %s", _start['latitude'], _start['longitude'], _end['latitude'], _end['longitude']);
                         logger.debug("Msg = " + _msg + " (" + _msg.length + ")");
                         mqN2P.push(_msg);
                         
                         // Get response related to this step
                         serverUtils.getMessageFromQueue(mqP2N).then((msg) => {
-                            logger.debug(serverUtils.format("Step %s, quality = %s", ___index, msg));
+                            logger.debug(serverUtils.format("Step %s, quality = %s", __index, msg));
                             if (__index > 1) {
                                 __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]].push(parseFloat(msg));
                             } else {
                                 __self[__index]['polyline'][[Constants.QUALITY_DATA_TAG]] = [parseFloat(msg)];
                             }
-                            ___resolve();
+                            //resolve();
                         });
                     } else {
-                        ___resolve();
+                        //resolve();
                     }
                 });
                 // TODO improvement: add callback at end to calculate average for this leg (can be done on app instead)
