@@ -195,39 +195,35 @@ for i, elem in enumerate(global_quality):
             err += dx
             y0 += sy
 
-print("Previous max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
+if DEBUG: print("Previous max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
 update_mask[:,:,hits_channel] += hit_mask
-print("New max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
-
-# Apply gaussian filter over mask to spread quality data (?)
-#update_mask = update_mask * gauss_factor
-gaussed = update_mask
-# for _ in range(gauss_runs):
-#     gaussed = gaussian_filter(gaussed, sigma=gauss_sigma)
+if DEBUG: print("New max hits = {}".format(np.max(update_mask[:,:,hits_channel])))
 
 if DEBUG:
-    print("Mu  mask min = {}, max = {}".format(np.min(gaussed[:, :, mu_channel]), np.max(gaussed[:, :, mu_channel])))
-    print("Sig mask min = {}, max = {}".format(np.min(gaussed[:, :, sig_channel]), np.max(gaussed[:, :, sig_channel])))
+    print("Mu  mask min = {}, max = {}".format(np.min(update_mask[:, :, mu_channel]), np.max(update_mask[:, :, mu_channel])))
+    print("Sig mask min = {}, max = {}".format(np.min(update_mask[:, :, sig_channel]), np.max(update_mask[:, :, sig_channel])))
 
-mu_mask = gaussed[:, :, mu_channel]
-sig_mask = gaussed[:, :, sig_channel]
+mu_mask = update_mask[:, :, mu_channel]
+sig_mask = update_mask[:, :, sig_channel]
 np_hits = np.array(hit_mask)
+
 assert np_hits.shape == mu_mask.shape
 
-printUnique(np_hits)
+if DEBUG: printUnique(np_hits)
 
-print("Before: {}".format(overlay_canvas[:,:,mu_channel]))
-printUnique(overlay_canvas[:,:,mu_channel])
-printUnique(mu_mask)
+if DEBUG:
+    print("Before: {}".format(overlay_canvas[:,:,mu_channel]))
+    printUnique(overlay_canvas[:,:,mu_channel])
+    printUnique(mu_mask)
 
 overlay_canvas[:, :, mu_channel] = np.where(np_hits == 1, mu_mask, overlay_canvas[:, :, mu_channel])
 overlay_canvas[:, :, sig_channel] = np.where(np_hits == 1, sig_mask, overlay_canvas[:, :, sig_channel])
 overlay_canvas[:, :, hits_channel] = update_mask[:, :, hits_channel]
 
-print("After: {}".format(overlay_canvas[:,:,mu_channel]))
-printUnique(overlay_canvas[:,:,mu_channel])
-
 if DEBUG:
+    print("After: {}".format(overlay_canvas[:,:,mu_channel]))
+    printUnique(overlay_canvas[:,:,mu_channel])
+
     if (np.max(overlay_canvas[:, :, hits_channel]) == 0):
         print("None active!")
     else:

@@ -115,20 +115,3 @@ with open("./tmp/"+nonce+".jpg", "w") as f:
     overlay_canvas_img.save(f, format='JPEG')
 
 print(nonce, end="")
-
-# with io.BytesIO() as output:
-#     overlay.save(output, format='PNG')
-#     sys.stdout.buffer.write(output.getvalue())
-
-# Testing
-# tiles.save_overlay(
-#     req_x_min,
-#     req_y_min,
-#     req_x_max,
-#     req_y_max,
-#     overlay_canvas,
-#     resolution=resolution,
-#     dpb=dpb,
-#     overlay_path=args.overlay_folder[0],
-#     DEBUG=DEBUG
-# )
