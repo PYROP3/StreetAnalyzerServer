@@ -1,20 +1,26 @@
-from ipcqueue import posixmq
-from ipcqueue.serializers import RawSerializer
 import argparse
 import sys
 import tiles
 import math
 
-DEBUG = False
+DEBUG = True
+
+def validate_coords(lat, lng):
+    assert lat >= -90 and lat <= 90, "Latitude {} is invalid".format(lat)
+    assert lng >= -180 and lng <= 180, "Longitude {} is invalid".format(lng)
+    return (lat, lng)
+
+def parse_route(coords):
+    assert len(coords) % 2 == 0
+    return [validate_coords(coords[2*i], coords[2*i+1]) for i in range(len(coords)//2)]
 
 parser = argparse.ArgumentParser(description='Retrieve quality information between series of points.')
-parser.add_argument('--queueTag', type=str, nargs=1, help='Tag used to uniquely identify message queue', required=True)
+parser.add_argument('--route', nargs='+', help='Sequence of coordinates defining a route', action='append', required=True, type=float)
+
+if DEBUG: print("Args: " + str(sys.argv))
 
 args = parser.parse_args(sys.argv[1:])
-qTag = args.queueTag[0]
-
-mqN2P = posixmq.Queue('/routeN2P' + qTag, serializer=RawSerializer)
-mqP2N = posixmq.Queue('/routeP2N' + qTag, serializer=RawSerializer)
+routes = args.route
 
 mu_channel = 0
 sig_channel = 1
@@ -70,20 +76,17 @@ def reviewLineSegment(startLat, startLong, endLat, endLong):
     if DEBUG: print("Line tile average = {}".format(seg_avg))
     return seg_avg
 
-print("Routing daemon starting")
-while True:
-    while mqN2P.qsize() > 0:
-        try:
-            msg = mqN2P.get().decode("UTF-8")
-            print('Python got: ' + msg)
-            points = [float(a) for a in msg.split()]
-            print("Points are {}, {}, {}, {}".format(points[0], points[1], points[2], points[3]))
+avgs = []
+for idx, val in enumerate(routes):
+    aux = []
+    for _idx, _val in enumerate(val):
+        if _idx > 0:
+            lat0, lng0 = val[_idx-1]
+            lat1, lng1 = val[_idx]
+            aux.append(reviewLineSegment(
+                lat0, lng0,
+                lat1, lng1
+            ))
+    avgs.append(sum(aux)/len(aux))
 
-            # Very inefficient, but should work
-            quality = reviewLineSegment(points[0], points[1], points[2], points[3])
-            print("Replying with quality = {}".format(quality))
-            mqP2N.put(str(quality).encode("UTF-8"))
-            print("Replied!")
-        except ValueError:
-            if msg == "EXIT":
-                exit(0)
+print(avgs)
