@@ -10,9 +10,6 @@ const userModel = require("./mongodb/model/User.js");
 const serverUtils = require("./util/Util.js");
 const logger = require("./util/Logger.js").logger;
 const mailer = require("./util/MailerHelper.js");
-const { flatten } = require('array-flatten');
-
-logger.debug('flatten', flatten)
 
 // JSON via post
 const bodyParser = require('body-parser');
@@ -462,22 +459,34 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
         ]
     )
 
-    var python_args = []
+    var python_args = [serverUtils.fetchFile(Constants.SCRIPT_ROUTE)]
 
     aux.forEach(element => {
-        python_args = [].concat.apply(python_args, '--route')
-        python_args = [].concat.apply(python_args, element)
+        //logger.debug("Got element = " + element.toString())
+        python_args.push('--route');
+        element.forEach(_element => {
+            //console.log("In 1")
+            //console.log(_element)
+            _element.forEach(__element => {
+                //console.log("In 2")
+                //console.log(__element)
+                __element.forEach(___element => {
+                    //console.log("In 3")
+                    //console.log(___element)
+                    ___element.forEach(coord => {
+                        python_args.push(coord);
+                    })
+                })
+            })
+        });
     });
-    logger.debug("Got aux:", python_args)
-    logger.debug("Len aux = " + python_args.length)
+    //logger.debug("Got python_args: " + python_args.toString())
+    logger.debug("Len python_args for route = " + python_args.length)
 
     // Spawn python process that will take in line segments via IPC-MQ and output quality data for each tuple (queueToken as param)
     const python = spawn(
         "python3",
-        [
-            serverUtils.fetchFile(Constants.SCRIPT_ROUTE),
-            python_args
-        ]
+        python_args
     );
 
     let python_data = []
@@ -485,7 +494,7 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
     // Collect data from script
     python.stdout.on('data', function (data) {
         logger.debug('[Server] Pipe data from python script : ' + data);
-        python_data.push(data)
+        python_data = python_data.concat(data.toString().split(','))
     });
 
     // Collect error data from script (for debugging)
@@ -499,9 +508,10 @@ server.get(Constants.ROUTE_REQUEST, async function(req, res) {
         if (directionResponse['routes'].length != python_data.length) {
             logger.error(serverUtils.format("Expected %s elements after script execution, got %s instead", directionResponse['routes'].length, python_data.length));
             sendErrorMessage(1, req, res);
+            return;
         }
         for (var i = 0; i < directionResponse['routes'].length; i++) {
-            directionResponse['routes'][i]['summary']['roadQualityEstimate'] = python_data.shift();
+            directionResponse['routes'][i]['summary']['roadQualityEstimate'] = parseFloat(python_data.shift());
         }
         res.status(200).header("Content-Type", "application/json").send(directionResponse);
     });
