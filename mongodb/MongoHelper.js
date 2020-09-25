@@ -17,7 +17,7 @@ if (serverUtils.isLocalEnvironment) {
     _dbUrl = "mongodb+srv://"+process.env.MONGO_USER+":"+process.env.MONGO_PASS+"@"+process.env.MONGO_URL+"/"+process.env.MONGO_DB_NAME+"?retryWrites=true&w=majority";
 }
 const dbUrl = _dbUrl;
-logger.debug("Mongo url=" + dbUrl);
+//logger.debug("Mongo url=" + dbUrl);
 
 // Mongo db client
 const client = new MongoClient(dbUrl, { useUnifiedTopology: true });
@@ -67,7 +67,7 @@ const load = async () => {
     }
 
     let cclient = await client.connect().catch(err => {
-        logger.error('Mongo load error: ', err.message);
+        logger.error('Mongo load error: ' + err.message);
         logger.debug('Mongo load error: ', err);
         process.exit(1); // FIXME: find appropriate exit code (maybe client.connect error code?)
     });

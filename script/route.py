@@ -3,7 +3,7 @@ import sys
 import tiles
 import math
 
-DEBUG = True
+DEBUG = False
 
 def validate_coords(lat, lng):
     assert lat >= -90 and lat <= 90, "Latitude {} is invalid".format(lat)
@@ -20,7 +20,9 @@ parser.add_argument('--route', nargs='+', help='Sequence of coordinates defining
 if DEBUG: print("Args: " + str(sys.argv))
 
 args = parser.parse_args(sys.argv[1:])
-routes = args.route
+routes = [parse_route(route) for route in args.route]
+
+if DEBUG: print("Got routes = {}".format(routes))
 
 mu_channel = 0
 sig_channel = 1
@@ -87,6 +89,6 @@ for idx, val in enumerate(routes):
                 lat0, lng0,
                 lat1, lng1
             ))
-    avgs.append(sum(aux)/len(aux))
+    avgs.append(float(sum(aux)/len(aux)))
 
-print(avgs)
+print(",".join([str(avg) for avg in avgs]), end="", flush=True)
