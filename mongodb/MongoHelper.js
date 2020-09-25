@@ -17,7 +17,7 @@ if (serverUtils.isLocalEnvironment) {
     _dbUrl = "mongodb+srv://"+process.env.MONGO_USER+":"+process.env.MONGO_PASS+"@"+process.env.MONGO_URL+"/"+process.env.MONGO_DB_NAME+"?retryWrites=true&w=majority";
 }
 const dbUrl = _dbUrl;
-logger.debug("Mongo url=" + dbUrl);
+//logger.debug("Mongo url=" + dbUrl);
 
 // Mongo db client
 const client = new MongoClient(dbUrl, { useUnifiedTopology: true });
@@ -67,7 +67,7 @@ const load = async () => {
     }
 
     let cclient = await client.connect().catch(err => {
-        logger.error('Mongo load error: ', err.message);
+        logger.error('Mongo load error: ' + err.message);
         logger.debug('Mongo load error: ', err);
         process.exit(1); // FIXME: find appropriate exit code (maybe client.connect error code?)
     });
@@ -106,7 +106,7 @@ const load = async () => {
         if (result == null) { return serverUtils.findErrorByName("InvalidCredentials"); }
 
         // Check if there is not a session active for the user
-        result = await module.exports.db.collection(sessionsCollectionStr).findOne({
+        result = await module.exports.db.collection('sessions').findOne({
             [Constants.USER_PRIMARY_KEY]:user
         });
         logger.debug(result);
@@ -217,23 +217,32 @@ const load = async () => {
         return result;
     }
 
-    // Tests
-    var user = "caiotsan@gmail.com"
-    var password = "HelloWorld"
-    logger.info("Salted password: " + serverUtils.saltAndHashPassword(user, password))
-    logger.info("Destroying nonexistent session ", await module.exports.destroySession("abc"));
-    var tok = await module.exports.createSession(user, password);
-    logger.info("Created session, token = ", tok);
-    var res = await module.exports.validateSession(tok);
-    logger.info("Checking for session: " + (res ? "ok" : "fail"));
-    var res = await module.exports.validateUserSession(tok, "caiotsan@gmail.com");
-    logger.info("Checking for user session: " + (res ? "ok" : "fail"));
-    var res = await module.exports.validateUserSession(tok, "bgmarini@hotmail.com");
-    logger.info("Checking for wrong user session: " + (res ? "ok" : "fail"));
-    var res = await module.exports.destroySession(tok);
-    logger.info("Destroying session " + (res ? "ok" : "fail"));
-    var res = await module.exports.destroySession(tok);
-    logger.info("Destroying session again " + (res ? "ok" : "fail"));
+    if (serverUtils.isLocalEnvironment) {
+        // Tests
+        var user = "caiotsan@gmail.com"
+        var password = "HelloWorld"
+
+        logger.info("Salted password: " + serverUtils.saltAndHashPassword(user, password))
+        logger.info("Destroying nonexistent session ", await module.exports.destroySession("abc"));
+
+        var tok = await module.exports.createSession(user, password);
+        logger.info("Created session, token = ", tok);
+
+        var res = await module.exports.validateSession(tok);
+        logger.info("Checking for session: " + (res ? "ok" : "fail"));
+
+        var res = await module.exports.validateUserSession(tok, "caiotsan@gmail.com");
+        logger.info("Checking for user session: " + (res ? "ok" : "fail"));
+
+        var res = await module.exports.validateUserSession(tok, "bgmarini@hotmail.com");
+        logger.info("Checking for wrong user session: " + (res ? "ok" : "fail"));
+
+        var res = await module.exports.destroySession(tok);
+        logger.info("Destroying session " + (res ? "ok" : "fail"));
+        
+        var res = await module.exports.destroySession(tok);
+        logger.info("Destroying session again " + (res ? "ok" : "fail"));
+    }
 }
 
 load();
