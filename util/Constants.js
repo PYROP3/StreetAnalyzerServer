@@ -55,115 +55,274 @@ module.exports.SERVER_URL_DEFAULT = "http://localhost:"+module.exports.SERVER_PO
 
 module.exports.QUALITY_DATA_TAG = "quality"
 
+module.exports.ROUTE_API_ENDPOINT = "https://api.tomtom.com/routing/1/calculateRoute/%s/json?key=%s"
+
 // TODO remove before deploy
 module.exports.MOCK_DIRECTIONS_RESPONSE = {
-    "status": "OK",
-    "geocoded_waypoints": [
-        {
-            "geocoder_status": "OK",
-            "place_id": "ChIJ7cv00DwsDogRAMDACa2m4K8",
-            "types": [
-                "locality",
-                "political"
-            ]
-        },
-        {
-            "geocoder_status": "OK",
-            "place_id": "ChIJ69Pk6jdlyIcRDqM1KDY3Fpg",
-            "types": [
-                "locality",
-                "political"
-            ]
-        },
-        {
-            "geocoder_status": "OK",
-            "place_id": "ChIJgdL4flSKrYcRnTpP0XQSojM",
-            "types": [
-                "locality",
-                "political"
-            ]
-        },
-        {
-            "geocoder_status": "OK",
-            "place_id": "ChIJE9on3F3HwoAR9AhGJW_fL-I",
-            "types": [
-                "locality",
-                "political"
-            ]
-        }
-    ],
+    "formatVersion": "0.0.12",
     "routes": [
-        {
-            "summary": "I-40 W",
-            "legs": [
-                {
-                    "steps": [
-                        {
-                            "travel_mode": "DRIVING",
-                            "start_location": {
-                                "lat": 41.85073,
-                                "lng": -87.65126
-                            },
-                            "end_location": {
-                                "lat": 41.85258,
-                                "lng": -87.65141
-                            },
-                            "polyline": {
-                                "points": "a~l~Fjk~uOwHJy@P"
-                            },
-                            "duration": {
-                                "value": 19,
-                                "text": "1 min"
-                            },
-                            "html_instructions": "Head <b>north</b> on <b>S Morgan St</b> toward <b>W Cermak Rd</b>",
-                            "distance": {
-                                "value": 207,
-                                "text": "0.1 mi"
-                            }
-                        }
-                    ],
-                    "duration": {
-                        "value": 74384,
-                        "text": "20 hours 40 mins"
-                    },
-                    "distance": {
-                        "value": 2137146,
-                        "text": "1,328 mi"
-                    },
-                    "start_location": {
-                        "lat": 35.4675602,
-                        "lng": -97.5164276
-                    },
-                    "end_location": {
-                        "lat": 34.0522342,
-                        "lng": -118.2436849
-                    },
-                    "start_address": "Oklahoma City, OK, USA",
-                    "end_address": "Los Angeles, CA, USA"
-                }
-            ],
-            "copyrights": "Map data ©2010 Google, Sanborn",
-            "overview_polyline": {
-                "points": "a~l~Fjk~uOnzh@vlbBtc~@tsE`vnApw{A`dw@~w\\|tNtqf@l{Yd_Fblh@rxo@b}@xxSfytAblk@xxaBeJxlcBb~t@zbh@jc|Bx}C`rv@rw|@rlhA~dVzeo@vrSnc}Axf]fjz@xfFbw~@dz{A~d{A|zOxbrBbdUvpo@`cFp~xBc`Hk@nurDznmFfwMbwz@bbl@lq~@loPpxq@bw_@v|{CbtY~jGqeMb{iF|n\\~mbDzeVh_Wr|Efc\\x`Ij{kE}mAb~uF{cNd}xBjp]fulBiwJpgg@|kHntyArpb@bijCk_Kv~eGyqTj_|@`uV`k|DcsNdwxAott@r}q@_gc@nu`CnvHx`k@dse@j|p@zpiAp|gEicy@`omFvaErfo@igQxnlApqGze~AsyRzrjAb__@ftyB}pIlo_BflmA~yQftNboWzoAlzp@mz`@|}_@fda@jakEitAn{fB_a]lexClshBtmqAdmY_hLxiZd~XtaBndgC"
+      {
+        "summary": {
+          "lengthInMeters": 1146,
+          "travelTimeInSeconds": 132,
+          "trafficDelayInSeconds": 0,
+          "departureTime": "2020-09-20T20:38:55+02:00",
+          "arrivalTime": "2020-09-20T20:41:07+02:00"
+        },
+        "legs": [
+          {
+            "summary": {
+              "lengthInMeters": 1146,
+              "travelTimeInSeconds": 132,
+              "trafficDelayInSeconds": 0,
+              "departureTime": "2020-09-20T20:38:55+02:00",
+              "arrivalTime": "2020-09-20T20:41:07+02:00"
             },
-            "warnings": [],
-            "waypoint_order": [
-                0,
-                1
-            ],
-            "bounds": {
-                "southwest": {
-                    "lat": 34.05236,
-                    "lng": -118.24356
-                },
-                "northeast": {
-                    "lat": 41.87811,
-                    "lng": -87.62979
-                }
-            }
-        }
+            "points": [
+              {
+                "latitude": 52.5093,
+                "longitude": 13.42937
+              },
+              {
+                "latitude": 52.50904,
+                "longitude": 13.42913
+              },
+              {
+                "latitude": 52.50895,
+                "longitude": 13.42904
+              },
+              {
+                "latitude": 52.50868,
+                "longitude": 13.4288
+              },
+              {
+                "latitude": 52.5084,
+                "longitude": 13.42857
+              },
+              {
+                "latitude": 52.50816,
+                "longitude": 13.42839
+              },
+              {
+                "latitude": 52.50791,
+                "longitude": 13.42825
+              },
+              {
+                "latitude": 52.50757,
+                "longitude": 13.42772
+              },
+              {
+                "latitude": 52.50752,
+                "longitude": 13.42785
+              },
+              {
+                "latitude": 52.50742,
+                "longitude": 13.42809
+              },
+              {
+                "latitude": 52.50735,
+                "longitude": 13.42824
+              },
+              {
+                "latitude": 52.5073,
+                "longitude": 13.42837
+              },
+              {
+                "latitude": 52.50673,
+                "longitude": 13.42961
+              },
+              {
+                "latitude": 52.50619,
+                "longitude": 13.43092
+              },
+              {
+                "latitude": 52.50574,
+                "longitude": 13.43195
+              },
+              {
+                "latitude": 52.50528,
+                "longitude": 13.43299
+              },
+              {
+                "latitude": 52.50513,
+                "longitude": 13.43336
+              },
+              {
+                "latitude": 52.50464,
+                "longitude": 13.43451
+              },
+              {
+                "latitude": 52.50451,
+                "longitude": 13.43482
+              },
+              {
+                "latitude": 52.50444,
+                "longitude": 13.43499
+              },
+              {
+                "latitude": 52.50418,
+                "longitude": 13.43564
+              },
+              {
+                "latitude": 52.50372,
+                "longitude": 13.43673
+              },
+              {
+                "latitude": 52.50343,
+                "longitude": 13.43738
+              },
+              {
+                "latitude": 52.5033,
+                "longitude": 13.43767
+              },
+              {
+                "latitude": 52.50275,
+                "longitude": 13.43873
+              }
+            ]
+          }
+        ],
+        "sections": [
+          {
+            "startPointIndex": 0,
+            "endPointIndex": 24,
+            "sectionType": "TRAVEL_MODE",
+            "travelMode": "car"
+          }
+        ]
+      },
+      {
+        "summary": {
+          "lengthInMeters": 1146,
+          "travelTimeInSeconds": 132,
+          "trafficDelayInSeconds": 0,
+          "departureTime": "2020-09-20T20:38:55+02:00",
+          "arrivalTime": "2020-09-20T20:41:07+02:00"
+        },
+        "legs": [
+          {
+            "summary": {
+              "lengthInMeters": 1146,
+              "travelTimeInSeconds": 132,
+              "trafficDelayInSeconds": 0,
+              "departureTime": "2020-09-20T20:38:55+02:00",
+              "arrivalTime": "2020-09-20T20:41:07+02:00"
+            },
+            "points": [
+              {
+                "latitude": 52.5093,
+                "longitude": 13.42937
+              },
+              {
+                "latitude": 52.50904,
+                "longitude": 13.42913
+              },
+              {
+                "latitude": 52.50895,
+                "longitude": 13.42904
+              },
+              {
+                "latitude": 52.50868,
+                "longitude": 13.4288
+              },
+              {
+                "latitude": 52.5084,
+                "longitude": 13.42857
+              },
+              {
+                "latitude": 52.50816,
+                "longitude": 13.42839
+              },
+              {
+                "latitude": 52.50791,
+                "longitude": 13.42825
+              },
+              {
+                "latitude": 52.50757,
+                "longitude": 13.42772
+              },
+              {
+                "latitude": 52.50752,
+                "longitude": 13.42785
+              },
+              {
+                "latitude": 52.50742,
+                "longitude": 13.42809
+              },
+              {
+                "latitude": 52.50735,
+                "longitude": 13.42824
+              },
+              {
+                "latitude": 52.5073,
+                "longitude": 13.42837
+              },
+              {
+                "latitude": 52.50673,
+                "longitude": 13.42961
+              },
+              {
+                "latitude": 52.50619,
+                "longitude": 13.43092
+              },
+              {
+                "latitude": 52.50574,
+                "longitude": 13.43195
+              },
+              {
+                "latitude": 52.50528,
+                "longitude": 13.43299
+              },
+              {
+                "latitude": 52.50513,
+                "longitude": 13.43336
+              },
+              {
+                "latitude": 52.50464,
+                "longitude": 13.43451
+              },
+              {
+                "latitude": 52.50451,
+                "longitude": 13.43482
+              },
+              {
+                "latitude": 52.50444,
+                "longitude": 13.43499
+              },
+              {
+                "latitude": 52.50418,
+                "longitude": 13.43564
+              },
+              {
+                "latitude": 52.50372,
+                "longitude": 13.43673
+              },
+              {
+                "latitude": 52.50343,
+                "longitude": 13.43738
+              },
+              {
+                "latitude": 52.5033,
+                "longitude": 13.43767
+              },
+              {
+                "latitude": 52.50275,
+                "longitude": 13.43873
+              }
+            ]
+          }
+        ],
+        "sections": [
+          {
+            "startPointIndex": 0,
+            "endPointIndex": 24,
+            "sectionType": "TRAVEL_MODE",
+            "travelMode": "car"
+          }
+        ]
+      }
     ]
-}
+  }
   
 // Pic info
 module.exports.DEFAULT_PIC_PATH = "public/images/default_pic.b64"

@@ -1,8 +1,15 @@
 from pymongo import MongoClient
+from bson.binary import Binary
+try:
+    from dotenv import load_dotenv
+except:
+    load_dotenv = None
+
 import os
 
 class MongoInterface:
-    def __init__(self, mode='sigma_mu', prod=True):
+    def __init__(self, mode='pickle', prod=True):
+        if load_dotenv: load_dotenv()
         if prod:
             _env = os.environ
             
@@ -14,22 +21,45 @@ class MongoInterface:
 
         self.collection = self.db[mode]
 
-    def getSegment(self, lat, long, quad):
-        _seg = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
-        #print("Get segment: " + str(_seg))
-        if _seg:
-            return _seg['segment']
-        else:
-            FileNotFoundError("Segment for {}:{},{} not found".format(quad, lat, long))
+        # FIXME caching may cause race conditions
+        self.cache = []
 
-    def saveSegment(self, lat, long, quad, segment):
-        _doc = self.collection.find_one_and_update({'lat':lat, 'long':long, 'quad':quad}, {'$set': {'segment':segment}})
+        self.max_cache = 5
+
+    def getTile(self, lat, long, quad):
+        # Check if tile is not cached
+        _tile = None
+        new_key = "{}_{}_{}".format(lat, long, quad)
+        for key, segment in self.cache:
+            if key == new_key:
+                _tile = segment
+                break
+
+        # If not found yet, look in database
+        if _tile is None:
+            _tile = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
+            if _tile:
+                # Update cache
+                while len(self.cache) >= self.max_cache:
+                    self.cache.pop(0)
+                self.cache.append((new_key, _tile['tile']))
+        
+        _tile = self.collection.find_one({'lat':lat, 'long':long, 'quad':quad})
+
+        if _tile:
+            return _tile['tile']
+        else:
+            raise FileNotFoundError("Tile for {}:{},{} not found".format(quad, lat, long))
+
+
+    def saveTile(self, lat, long, quad, tile):
+        _tile = Binary(tile)
+        _doc = self.collection.find_one_and_update({'lat':lat, 'long':long, 'quad':quad}, {'$set': {'tile':_tile}})
         if not _doc: # Create
-            _doc = self.collection.insert_one({'lat':lat, 'long':long, 'quad':quad, 'segment':segment})
-        #print("Save segment: " + str(_doc))
+            _doc = self.collection.insert_one({'lat':lat, 'long':long, 'quad':quad, 'tile':_tile})
 
 if __name__ == "__main__":
     this = MongoInterface()
-    this.getSegment(10, 10, 'NE')
-    this.saveSegment(10, 10, 'NE', 'abc')
-    this.getSegment(10, 10, 'NE')
+    this.getTile(10, 10, 'NE')
+    this.saveTile(10, 10, 'NE', 'abc')
+    this.getTile(10, 10, 'NE')
