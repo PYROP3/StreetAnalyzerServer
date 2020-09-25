@@ -1,6 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
 import mongoInterface
-import segments
+import tiles
+import numpy as np
+
+mu_channel=0
 
 # [[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084],[37.4219983,-122.084]]
 
@@ -16,16 +19,17 @@ req_y_max = max([c[1] for c in global_coordinates])
 
 print("Bounding box from {}, {} to {}, {}".format(req_x_min, req_y_min, req_x_max, req_y_max))
 
-overlay_canvas = segments.load_segments (
+overlay_canvas = tiles.load_tiles (
     req_x_min,
     req_y_min,
     req_x_max,
     req_y_max,
-    DEBUG=True,
-    source_mode=False
+    DEBUG=True
 )
 
-segments.save_overlay(
+print("Mu range: {} <> {}".format(np.min(overlay_canvas[:, :, mu_channel]), np.max(overlay_canvas[:, :, mu_channel])))
+
+tiles.save_overlay(
     req_x_min,
     req_y_min,
     req_x_max,

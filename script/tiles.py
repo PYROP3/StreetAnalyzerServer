@@ -8,8 +8,9 @@ import numpy as np
 import base64
 from io import BytesIO
 import mongoInterface
+import pickle
 
-resolution = 0.01 # Arclength (in degrees) corresponding to each segment side - 0.01deg ~ 1Km
+resolution = 0.01 # Arclength (in degrees) corresponding to each tile side - 0.01deg ~ 1Km
 dpb = 500 # Dots per block; each image should be (dpb x dpb)
 
 def red_sigmoid(x):
@@ -31,23 +32,7 @@ mu_channel = 0
 sig_channel = 1
 util_channel = 2
 
-util_masks = {
-    "visited":1
-}
-
-source_mode = False
-try:
-    fnt = ImageFont.truetype('arial.ttf', 40)
-except OSError:
-    fnt = ImageFont.load_default()
-
-r_channel = 0
-g_channel = 1
-b_channel = 2
-
-empty_gray = 200
-
-segmentHandler = mongoInterface.MongoInterface(mode='source' if source_mode else 'sigma_mu')
+tileHandler = mongoInterface.MongoInterface(mode='pickle')
 
 def __rangeMap(min1, max1, val1, min2, max2):
     return min2 + (val1 - min1) * (max2 - min2)/(max1 - min1)
@@ -64,7 +49,10 @@ def expand_corners(min_x, min_y, max_x, max_y, resolution=resolution):
         [math.ceil(max_x / resolution), math.ceil(max_y / resolution)]
     ]
 
-def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_append="_sigma_mu", dpb=dpb, overlay_path="../overlay/", DEBUG=False, source_mode=False):
+def load_tiles(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb, DEBUG=False):
+
+    default_empty_tile = np.zeros((dpb, dpb, 3))
+    default_empty_tile[:,:,mu_channel] = 0.5
 
     required_corners = expand_corners(min_x, min_y, max_x, max_y, resolution=resolution)
 
@@ -72,7 +60,7 @@ def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_appen
     required_delta_y = abs(required_corners[1][1] - required_corners[0][1]) + 0
 
     try:
-        overlay_canvas = np.zeros((required_delta_y * dpb, required_delta_x * dpb, 3), dtype=np.uint8)
+        overlay_canvas = np.zeros((required_delta_y * dpb, required_delta_x * dpb, 3))
     except ValueError:
         raise MemoryError
 
@@ -85,28 +73,15 @@ def load_segments(min_x, min_y, max_x, max_y, resolution=resolution, alias_appen
         for _y in range(required_delta_y):
             y = _y + __y - __sign(min_y)
 
-            overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), alias_append)
+            overlay_alias = "{}_{}_{}".format(__quad(x, y), abs(y), abs(x))
             if DEBUG: print("Opening {}".format(overlay_alias))
 
-            try: # Get segment if it exists
-                temp_overlay = b64ToImage(segmentHandler.getSegment(y, x, __quad(x, y)))
-                aux = np.asarray(temp_overlay)
-                if DEBUG: print("Ranges: {}:{}, {}:{}".format(_y*dpb, (_y+1)*dpb, _x*dpb, (_x+1)*dpb))
-                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = aux[:, :, :]
-
-            except: # Create new segment if not found
-                if DEBUG: print("[PYTHON] creating new segment (source_mode = {})".format(str(source_mode)))
-
-                if source_mode: # Source mode (for testing cropping)
-                    img = Image.new("RGB", (dpb, dpb), ((x+y)%2*255, 0, (x+y)%2*255))
-                    d = ImageDraw.Draw(img)
-                    d.text((20, 20), overlay_alias, font=fnt, fill=(127, 127, 127, 255))
-
-                else: # Sigma-mu mode (for testing maths)
-                    img = Image.new("RGB", (dpb, dpb), (127, 255, 0))
-
-                aux = np.asarray(img)
-                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = aux[:, :, :]
+            try: # Get tile if it exists
+                _tile = tileHandler.getTile(y, x, __quad(x, y))
+                _tile = pickle.loads(_tile)
+                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = _tile[:, :, :]
+            except: # Create new tile if not found
+                overlay_canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :] = default_empty_tile[:,:,:]
 
     return overlay_canvas
 
@@ -123,7 +98,7 @@ def bounding_box(min_x, min_y, max_x, max_y, resolution=resolution, dpb=dpb):
         int(__rangeMap(required_corners[0][1], required_corners[1][1], max_y / resolution, required_delta_y * dpb, 0))
     )
 
-def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, alias_append="_sigma_mu", dpb=dpb, overlay_path="../overlay/", DEBUG=False):
+def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, dpb=dpb, DEBUG=False):
     required_corners = expand_corners(min_x, min_y, max_x, max_y, resolution=resolution)
 
     required_delta_x = abs(required_corners[1][0] - required_corners[0][0])
@@ -138,16 +113,7 @@ def save_overlay(min_x, min_y, max_x, max_y, canvas, resolution=resolution, alia
         for _y in range(required_delta_y):
             y = _y + __y - __sign(min_y)
 
-            overlay_alias = "{}_{}_{}{}".format(__quad(x, y), abs(y), abs(x), alias_append)
-            if DEBUG: print("Saving as {}".format(overlay_alias))
+            if DEBUG: print("Saving as {}_{}_{}".format(__quad(x, y), abs(y), abs(x)))
 
-            overlay_segment = Image.fromarray(canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :])
-            segmentHandler.saveSegment(y, x, __quad(x, y), imageToB64(overlay_segment))
-
-def b64ToImage(data):
-    return Image.open(BytesIO(base64.b64decode(data)))
-
-def imageToB64(img):
-    _buffer = BytesIO()
-    img.save(_buffer, format="PNG")
-    return base64.b64encode(_buffer.getvalue())
+            _tile = pickle.dumps(canvas[_y*dpb:(_y+1)*dpb, _x*dpb:(_x+1)*dpb, :], protocol=3)
+            tileHandler.saveTile(y, x, __quad(x, y), _tile)
