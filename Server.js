@@ -396,7 +396,7 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
         });
     });
 
-    py_args = py_args.concat([].concat.apply([], data["dados"].map(line => ["--accel_data", line.map(data => data.join(",")).join(" ")])))
+    // py_args = py_args.concat([].concat.apply([], data["dados"].map(line => ["--accel_data", line.map(data => data.join(",")).join(" ")])))
 
     logger.debug("[Server][logTrip][debug] py_args = " + py_args)
     const python = spawn(
