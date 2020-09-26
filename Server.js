@@ -287,8 +287,6 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
             query.minLatitude,  // y_min
             query.maxLongitude, // x_max
             query.maxLatitude,  // y_max
-            "--overlay_folder",
-            serverUtils.fetchFile("/overlay/"),         // overlay_folder
             "--errors_file",
             serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
             //"--DEBUG"
