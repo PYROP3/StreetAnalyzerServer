@@ -374,10 +374,27 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
         "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
-        "--accel_data"     , data["dados"].map(axis => axis.join(",")).join(" "),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
     ]
+
+    data["dados"].forEach(segment => {
+        //logger.debug("Got element = " + element.toString())
+        py_args.push('--accel_data');
+        segment.forEach(sequence => {
+            //console.log("In 1")
+            //console.log(sequence)
+            sequence.forEach(tuple => {
+                //console.log("In 2")
+                //console.log(tuple)
+                tuple.forEach(axis => {
+                    //console.log("In 3")
+                    //console.log(axis)
+                    py_args.push(axis);
+                })
+            })
+        });
+    });
 
     py_args = py_args.concat([].concat.apply([], data["dados"].map(line => ["--accel_data", line.map(data => data.join(",")).join(" ")])))
 
