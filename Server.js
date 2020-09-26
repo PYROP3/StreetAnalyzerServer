@@ -350,13 +350,13 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
         return;
     }
 
-    logger.info("[Server][logTrip] Trip log requested")
+    logger.info("[Server][logTrip] Trip log requested");
 
-    console.log(data["dados"])
+    // console.log(data["dados"])
 
-    logger.debug("[Server][logTrip] Authentication : " + JSON.stringify(authResult))
-    //logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"].slice(0, 5)))
-    //logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"].slice(0, 4)))
+    // logger.debug("[Server][logTrip] Authentication : " + JSON.stringify(authResult))
+    // logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"].slice(0, 5)))
+    // logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"].slice(0, 4)))
 
     for(let i = 0; i < (data["pontos"]).length; i++){
         if(data["pontos"][i][1] > 180 || data["pontos"][i][1] < -180 || data["pontos"][i][0] > 90 || data["pontos"][i][0] < -90){
@@ -382,19 +382,26 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     data["dados"].forEach(segment => {
         //logger.debug("Got element = " + element.toString())
         py_args.push('--accel_data');
-        segment.forEach(sequence => {
-            //console.log("In 1")
-            //console.log(sequence)
-            py_args.push(sequence.join(','))
-            // sequence.forEach(tuple => {
-            //     //console.log("In 2")
-            //     //console.log(tuple)
-            //     py_args.push(tuple);
-            // })
-        });
+        py_args.push(
+            segment.map(sequence => {
+                //console.log(sequence)
+                return sequence.join(',');
+            }).join(' ');
+        );
+        // segment.forEach(sequence => {
+        //     //console.log("In 1")
+        //     //console.log(sequence)
+        //     py_args.push(sequence.join(','))
+        //     // sequence.forEach(tuple => {
+        //     //     //console.log("In 2")
+        //     //     //console.log(tuple)
+        //     //     py_args.push(tuple);
+        //     // })
+        // });
     });
 
     logger.debug("[Server][logTrip][debug] py_args = " + py_args)
+    //console.log(py_args)
     const python = spawn(
         process.env.PYTHON_BIN,
         py_args
