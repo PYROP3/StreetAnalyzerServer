@@ -353,8 +353,8 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     logger.info("[Server][logTrip] Trip log requested")
 
     logger.debug("[Server][logTrip] Authentication : " + JSON.stringify(authResult))
-    logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"].slice(0, 5)))
-    logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"].slice(0, 4)))
+    //logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"].slice(0, 5)))
+    //logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"].slice(0, 4)))
 
     for(let i = 0; i < (data["pontos"]).length; i++){
         if(data["pontos"][i][1] > 180 || data["pontos"][i][1] < -180 || data["pontos"][i][0] > 90 || data["pontos"][i][0] < -90){
@@ -376,21 +376,21 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
         //"--DEBUG"
     ]
 
+    // Append accelerometer information
     data["dados"].forEach(segment => {
         //logger.debug("Got element = " + element.toString())
         py_args.push('--accel_data');
         segment.forEach(sequence => {
             //console.log("In 1")
             //console.log(sequence)
-            sequence.forEach(tuple => {
-                //console.log("In 2")
-                //console.log(tuple)
-                py_args.push(tuple);
-            })
+            py_args.push(sequence.join(','))
+            // sequence.forEach(tuple => {
+            //     //console.log("In 2")
+            //     //console.log(tuple)
+            //     py_args.push(tuple);
+            // })
         });
     });
-
-    // py_args = py_args.concat([].concat.apply([], data["dados"].map(line => ["--accel_data", line.map(data => data.join(",")).join(" ")])))
 
     logger.debug("[Server][logTrip][debug] py_args = " + py_args)
     const python = spawn(
