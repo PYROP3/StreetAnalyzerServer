@@ -352,6 +352,8 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
 
     logger.info("[Server][logTrip] Trip log requested")
 
+    console.log(data["dados"])
+
     logger.debug("[Server][logTrip] Authentication : " + JSON.stringify(authResult))
     //logger.debug("[Server][logTrip] Coordinates    : " + JSON.stringify(data["pontos"].slice(0, 5)))
     //logger.debug("[Server][logTrip] Accel data     : " + JSON.stringify(data["dados"].slice(0, 4)))
