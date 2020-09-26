@@ -373,7 +373,7 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
 
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
-        "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
+        "--coordinates"    , data["pontos"].map(coord => coord.join(",")).join(" "),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
     ]
