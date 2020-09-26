@@ -385,11 +385,7 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
             sequence.forEach(tuple => {
                 //console.log("In 2")
                 //console.log(tuple)
-                tuple.forEach(axis => {
-                    //console.log("In 3")
-                    //console.log(axis)
-                    py_args.push(axis);
-                })
+                py_args.push(tuple);
             })
         });
     });
