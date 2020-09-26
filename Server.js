@@ -386,8 +386,8 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
             segment.map(sequence => {
                 //console.log(sequence)
                 return sequence.join(',');
-            }).join(' ');
-        );
+            }).join(' ')
+        )
         // segment.forEach(sequence => {
         //     //console.log("In 1")
         //     //console.log(sequence)
