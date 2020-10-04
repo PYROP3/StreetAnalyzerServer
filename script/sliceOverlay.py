@@ -107,6 +107,8 @@ if DEBUG:
 
 overlay_canvas_img = overlay_canvas_img.crop((left, upper, right, lower))
 
+if DEBUG: print(overlay_canvas_img.size)
+
 if DEBUG: overlay_canvas_img.show()
 
 nonce = os.urandom(32).hex()
