@@ -59,6 +59,11 @@ server.get('/', function (req, res) {
 
 });
 
+server.get('/verifyAccount', function (req, res) {
+    res.sendFile(__dirname + '/web/mapa.html');
+
+});
+
 server.get('/home', function (req, res) {
     res.sendFile(__dirname + '/web/home.html');
 
@@ -187,7 +192,6 @@ server.get(Constants.VERIFY_ACCOUNT_REQUEST, async function(req, res) {
             auth[Constants.USER_PASSWORD_KEY],
             auth[Constants.USER_PIC_KEY]
         ).toJSON());
-        res.sendFile(__dirname + '/web/mapa.html');
         sendErrorMessage(0, req, res); //TODO find a better way to reply
     }
 });
