@@ -291,8 +291,6 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
             query.minLatitude,  // y_min
             query.maxLongitude, // x_max
             query.maxLatitude,  // y_max
-            "--overlay_folder",
-            serverUtils.fetchFile("/overlay/"),         // overlay_folder
             "--errors_file",
             serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
             //"--DEBUG"
@@ -378,7 +376,6 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
         "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
-        "--overlay_folder" , serverUtils.fetchFile("/overlay/"),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
     ]
