@@ -10,6 +10,7 @@ const userModel = require("./mongodb/model/User.js");
 const serverUtils = require("./util/Util.js");
 const logger = require("./util/Logger.js").logger;
 const mailer = require("./util/MailerHelper.js");
+const handlebars = require('handlebars');
 
 // JSON via post
 const bodyParser = require('body-parser');
@@ -24,10 +25,18 @@ require('dotenv').config({path: __dirname + '/util/.env'});
 require('dotenv').config({path: __dirname + '/script/.env'});
 require('dotenv').config({path: __dirname + '/mongodb/.env'});
 
-//Email
-EmailTemplate = require('email-templates').EmailTemplate,
-path = require('path'),
-Promise = require('bluebird');
+//Email-Template
+var readHTMLFile = function(path, callback) {
+    fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
+        if (err) {
+            throw err;
+            callback(err);
+        }
+        else {
+            callback(null, html);
+        }
+    });
+};
 
 // Cookies
 function parseCookies (request) {
@@ -82,21 +91,6 @@ function sendErrorMessage(code, request, response) {
     response.status(error["HttpReturn"]).header("Content-Type", "application/json").send(JSON.stringify(thisErr));
 }
 
-//Email template
-function loadTemplate(templateName, contexts){
-    let template = new EmailTemplate(path.join(__dirname, '/templates', templateName));
-    return Promise.all([contexts].map((context) => {
-        return new Promise((resolve, reject) => {
-            template.render(context, (err, result) => {
-                if (err) reject(err);
-                else resolve({
-                    email: result,
-                    context,
-                });
-            });
-        });
-    }));
-}
 
 // =================================== Requests ===================================
 
@@ -133,17 +127,22 @@ server.post(Constants.CREATE_ACCOUNT_REQUEST, async function(req, res) {
         sendErrorMessage(1, req, res);
     } else {
         sendErrorMessage(0, req, res); //TODO find a better way to reply
-        //TODO des-gambiarrar esse processo de enviar email
-        loadTemplate('validation', newUser).then((results) => {
-            return Promise.all(results.map((result) =>{         
-                mailer.sendMail({
-                    from: Constants.SOURCE_EMAIL_ADDRESS,
-                    to: newUser['email'],
-                    subject: 'Street analyzer account validation',
-                    html: result.email.html
-                });
-            }));
-        });
+        //TODO des-gambiarrar esse processo de enviar email  
+        var replacements = {
+            link: 'https://street-analyzer.herokuapp.com',
+            name: newUser['name'],
+            authToken: newUser['authToken']
+       };
+        readHTMLFile(__dirname + '/util/templates/validation.handlebars', function(err, html) {
+            var template = handlebars.compile(html);
+            var htmlToSend = template(replacements);
+            mailer.sendMail({
+            from: Constants.SOURCE_EMAIL_ADDRESS,
+            to: newUser['email'],
+            subject: 'Street analyzer - Confirmação de conta',
+            html: htmlToSend,
+            });
+        });           
     }
 });
 
@@ -226,16 +225,21 @@ server.post(Constants.RECOVER_PASS_NONCE_REQUEST, async function(req, res) {
         sendErrorMessage(0, req, res); //TODO find a better way to reply
         let aux = findResult;
         aux["passwordNonce"] = result;
-        //TODO gerar um email apropriado para recuperação de senha
-        loadTemplate('recovery', aux).then((results) => {
-            return Promise.all(results.map((result) =>{         
-                mailer.sendMail({
-                    from: Constants.SOURCE_EMAIL_ADDRESS,
-                    to: findResult['email'],
-                    subject: 'Street analyzer account recovery',
-                    html: result.email.html,
-                });
-            }));
+
+        var replacements = {
+            link: 'https://street-analyzer.herokuapp.com',
+            name: findResult['name'],
+            passwordNonce: findResult['passwordNonce']
+       };
+       readHTMLFile(__dirname + '/util/templates/recovery.handlebars', function(err, html) {
+            var template = handlebars.compile(html);
+            var htmlToSend = template(replacements);
+            mailer.sendMail({
+                from: Constants.SOURCE_EMAIL_ADDRESS,
+                to: findResult['email'],
+                subject: 'Street analyzer - Recuperação de conta',
+                html: htmlToSend
+            });
         });
     }
 });

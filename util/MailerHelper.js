@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const Constants = require("./Constants");
+const hbs = require('nodemailer-express-handlebars');
 require('dotenv').config({path: __dirname + '/.env'});
 
 const transporter = nodemailer.createTransport({
@@ -7,13 +8,15 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        type: 'OAuth2',
         user: Constants.SOURCE_EMAIL_ADDRESS,
-        clientId:     process.env.SOURCE_EMAIL_CLIENT_ID,
-        clientSecret: process.env.SOURCE_EMAIL_CLIENT_SECRET,
-        refreshToken: process.env.SOURCE_EMAIL_REFRESH_TOKEN
+        pass:     process.env.SOURCE_EMAIL_PASSWORD,
     }
 });
+
+transporter.use('compile', hbs({
+    viewEngine: 'express-handlebars',
+    viewPath: './util/templates'
+}));
 
 /**
  * Generic send email
