@@ -179,7 +179,7 @@ server.post(Constants.AUTH_REQUEST, async function(req, res) {
         let userData = await mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
         delete(userData[Constants.USER_PASSWORD_KEY]) // Remove user password from response
         delete(userData["_id"]) // Remove mongo document id
-        logger.debug("Got user data =", userData)
+        // logger.debug("Got user data =", userData)
         userData[Constants.AUTH_TOKEN_KEY] = authResult;
         res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
