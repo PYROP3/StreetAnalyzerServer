@@ -80,23 +80,19 @@ map.on('load', function() {
           'id': 'overlay',
           'type': 'fill',
           'source': {
-              'type': 'geojson',
+              'type': 'raster',
               'data': {
                   'type': 'Feature',
                   'geometry': {
                       'type': 'Polygon',
-                      'coordinates': [[[-0.2046175878910219, 51.52327158962092],
-                          [-0.05355557617221507, 51.53523241868879],
-                          [-0.13045987304786877, 51.46299250930767]]]
+                      'coordinates': [[[-22.84400, -47.06200]
+                          [-24, -45]]]
                   }
               }
           },
           'layout': {},
-          'paint': {
-              'fill-color': '#db356c',
-              'fill-opacity': 0.5,
-              'fill-outline-color': 'black'
-          }
+          'paint':{
+          'background-image:': 'LogoTipo.png'}
       });
   });
 }
