@@ -52,7 +52,32 @@ function parseCookies (request) {
 }
 
 // Static pages
-server.use('/static', express.static('public'));
+server.use(express.static("web"));
+
+server.get('/', function (req, res) {
+    res.sendFile(__dirname + '/web/mapa.html');
+
+});
+
+server.get('/verifyAccount', function (req, res) {
+    res.sendFile(__dirname + '/web/mapa.html');
+
+});
+
+server.get('/home', function (req, res) {
+    res.sendFile(__dirname + '/web/home.html');
+
+});
+
+server.get('/mapa', function (req, res) {
+        res.sendFile(__dirname + '/web/mapa.html');
+    
+});
+
+server.get('/contato', function (req, res) {
+    res.sendFile(__dirname + '/web/contato.html');
+
+});
 
 // Oauth2 setup
 // server.use(oauth2.inject());
