@@ -52,7 +52,32 @@ function parseCookies (request) {
 }
 
 // Static pages
-server.use('/static', express.static('public'));
+server.use(express.static("web"));
+
+server.get('/', function (req, res) {
+    res.sendFile(__dirname + '/web/mapa.html');
+
+});
+
+server.get('/verifyAccount', function (req, res) {
+    res.sendFile(__dirname + '/web/mapa.html');
+
+});
+
+server.get('/home', function (req, res) {
+    res.sendFile(__dirname + '/web/home.html');
+
+});
+
+server.get('/mapa', function (req, res) {
+        res.sendFile(__dirname + '/web/mapa.html');
+    
+});
+
+server.get('/contato', function (req, res) {
+    res.sendFile(__dirname + '/web/contato.html');
+
+});
 
 // Oauth2 setup
 // server.use(oauth2.inject());
@@ -179,7 +204,7 @@ server.post(Constants.AUTH_REQUEST, async function(req, res) {
         let userData = await mongo.getUser(data[Constants.USER_PRIMARY_KEY]);
         delete(userData[Constants.USER_PASSWORD_KEY]) // Remove user password from response
         delete(userData["_id"]) // Remove mongo document id
-        logger.debug("Got user data =", userData)
+        // logger.debug("Got user data =", userData)
         userData[Constants.AUTH_TOKEN_KEY] = authResult;
         res.status(200).header("Content-Type", "application/json").send(JSON.stringify(userData));
     } else {
@@ -291,8 +316,6 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
             query.minLatitude,  // y_min
             query.maxLongitude, // x_max
             query.maxLatitude,  // y_max
-            "--overlay_folder",
-            serverUtils.fetchFile("/overlay/"),         // overlay_folder
             "--errors_file",
             serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
             //"--DEBUG"
@@ -378,7 +401,6 @@ server.post(Constants.LOG_TRIP_REQUEST, async function(req, res){
     let py_args = [
         serverUtils.fetchFile(Constants.SCRIPT_LOG_TRIP),
         "--coordinates"    , data["pontos"].map(coord => [coord[1], coord[0]].join(",")).join(" "),
-        "--overlay_folder" , serverUtils.fetchFile("/overlay/"),
         "--errors_file"    , serverUtils.fetchFile(Constants.SCRIPT_ERRORS_PATH),
         //"--DEBUG"
     ]
