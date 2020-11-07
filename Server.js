@@ -344,10 +344,10 @@ server.get(Constants.QUALITY_OVERLAY_REQUEST, function(req, res) {
             return;
         }
 
-        res.set('Content-Type', 'image/jpeg');
+        res.set('Content-Type', 'image/png');
 
         // Get file using nonce from script
-        const path = serverUtils.fetchFile("/tmp/"+overlayNonce+".jpg");
+        const path = serverUtils.fetchFile("/tmp/"+overlayNonce+".png");
 
         // Send customized overlay
         res.sendFile(path, (err) => {

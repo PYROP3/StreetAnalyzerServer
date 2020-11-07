@@ -63,8 +63,6 @@ if req_x_min > req_x_max  or req_y_max < req_y_min:
 
 if DEBUG: print("Done!")
 
-aux_canvas = overlay_canvas[:, :, :]
-
 # Convert sigma-mu to gradient
 if DEBUG:
     if (np.max(overlay_canvas[:, :, hits_channel]) == 0):
@@ -72,6 +70,7 @@ if DEBUG:
     else:
         print("Found active!")
     print("Mu range: {} <> {}".format(np.min(overlay_canvas[:, :, mu_channel]), np.max(overlay_canvas[:, :, mu_channel])))
+    print("Hits range: {} <> {}".format(np.min(overlay_canvas[:, :, hits_channel]), np.max(overlay_canvas[:, :, hits_channel])))
 
 try:
     _mu = overlay_canvas[:, :, mu_channel]
@@ -83,11 +82,14 @@ ax = sns.heatmap(np.array(_mu), xticklabels=False, yticklabels=False, cbar=False
 fig.tight_layout(pad=0)
 fig.canvas.draw()
 data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-aux_canvas = data.reshape(fig.canvas.get_width_height()[::-1] + (3, ))
+aux_canvas = np.concatenate(
+    (data.reshape(fig.canvas.get_width_height()[::-1] + (3, )),
+    np.where(overlay_canvas[:, :, mu_channel] != 0.5, 255, 0).astype(np.uint8)[:,:,np.newaxis]), # FIXME should be where overlay_canvas[:, :, hits_channel] > 0
+    axis=2)
 
-assert aux_canvas.shape == overlay_canvas.shape, "Expected {}, got {}".format(str(overlay_canvas.shape), str(aux_canvas.shape))
+assert aux_canvas.shape[:2] == overlay_canvas.shape[:2], "Expected {}, got {}".format(str(overlay_canvas.shape[:2]), str(aux_canvas.shape[:2]))
 
-overlay_canvas_img = Image.fromarray(aux_canvas)
+overlay_canvas_img = Image.fromarray(aux_canvas, mode="RGBA")
 
 if DEBUG: overlay_canvas_img.show()
 
@@ -113,7 +115,7 @@ if DEBUG: overlay_canvas_img.show()
 
 nonce = os.urandom(32).hex()
 
-with open("./tmp/"+nonce+".jpg", "w") as f:
-    overlay_canvas_img.save(f, format='JPEG')
+with open("./tmp/"+nonce+".png", "wb") as f:
+    overlay_canvas_img.save(f, format='PNG')
 
 print(nonce, end="")
