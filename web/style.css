@@ -4,54 +4,97 @@
          url(web/Cloud-Light.woff) format('woff'),
          url(web/Cloud-Light.ttf) format('truetype');
   }
+
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+
 body{
-    background: #C3EAE9;
+    background: linear-gradient(to bottom, #026796 1%, #d8fcfb 99%);
     font-family: 'Roboto Mono', monospace;
+
 }
 
 header{
-    background:#06413f;
     height: 100px;
     z-index:1000;
 }
 
 .menu{
-    position: relative;
+    position: absolute;
     height: 100px;
     width: 100%;
-    margin: 0 auto;
     z-index: 1000;
 }
 
+#menu_mapa{
+    background: -moz-linear-gradient(bottom, rgba(255,0,0,0) 0%, #026796 100%);
+    background: -webkit-linear-gradient(bottom, #026796 0%,#026796 100%);
+    background: linear-gradient(to top, rgba(255,0,0,0) 0%,#026796 100%);
+}
+
 .mensagem{
-    position: absolute;
-    height: 100%;
-    width: 100%;
+    border-radius:8px;
+    position: relative;
+    height: 90%;
+    width: 70%;
     color: #000000;
-    margin: 80px 0 0 20px;
+    margin: 120px auto;
     z-index: 1000;
     font-family: 'Roboto Mono', monospace;
+    padding: 40px;
+    text-align: justify;
+    background-color: #e5f3f3;
+    border:1px solid #ccc;
+    display: table;
+}
+
+form {
+    font-family: 'Roboto Mono', monospace;
+    margin: 0 auto; 
+    position: relative;
+    font-size: 15px;
+    text-align: left;
+    max-width: 500px;
+    display: table;
+}
+
+#msg_form{
+    padding-bottom: 117px;
+    align-items: center;
+    text-align: center;
+}
+
+p{
+    font-family: 'Roboto Mono', monospace;
+    line-height: 30px;
+    font-size: 20px;
 }
 
 h2{
     text-transform: uppercase; 
     font-family: 'Roboto Mono', monospace;
-    font-size: 20px;
+    font-size: 32px;
     font-weight: bold;
     text-align: center;
 }
 
 nav{
+    margin-top: 33px;
+    display: inline-block;
     position: absolute;
     right: 0;
-    background:#06413f;
     width: 100%;
     height: 100%;
 }
 
 #logo{
+    display: inline-block;
     padding: 20px 0 0 20px;
-    background:#06413f;
     z-index: 1000;
 }
 
@@ -64,7 +107,7 @@ nav a{
     
     text-transform: uppercase; 
     color: #C3EAE9; 
-    font-size: 22px;
+    font-size: 27px;
     font-family: 'Roboto Mono', monospace;
     text-decoration: none;
 }
@@ -73,15 +116,15 @@ a{
 }
 
 #home_h{
-    background-color: #085552;
+    background-color: #0084c2;
 }
 
 #mapa_m{
-    background-color: #085552;
+    background-color: #0084c2;
 }
 
 #contato_c{
-    background-color: #085552;
+    background-color: #0084c2;
 }
 
 ul{
@@ -117,4 +160,42 @@ img{
     height: 100%;
     left: 0;
     top: 0;
+}
+
+input, textarea {
+    width: 200px;
+    padding: 10px;
+    color: black;
+    margin-left: 20px;
+    margin-top: 10px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border: 1px solid;
+}
+
+input:hover, textarea:hover, input:focus, textarea:focus {
+    border-color: #003f5c;
+    box-shadow: 5px 0px 9px #b5e8ff;
+    background-color: #7de5ff;
+    color: black;
+    font-weight: bold;
+}
+
+.enviar {
+    background-color: #7de5ff;
+    height: 40px;
+    width: 100px;
+    font-weight: bold;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border: 1px solid;
+    color: black;
+}
+
+textarea {
+    width: 400px;
+    height: 120px;
+    line-height: 20px;
+    max-width: 400px;
 }
