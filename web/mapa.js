@@ -4,7 +4,7 @@ let map;
 var geocoder;
 var marker;
 
-var url = "https://street-analyzer.herokuapp.com/qualityOverlay?minLatitude=-22.887264&maxLatitude=-22.881056&minLongitude=-47.060292&maxLongitude=-47.054390";
+var url = "https://street-analyzer.herokuapp.com/qualityOverlay?minLatitude=-22.888264&maxLatitude=-22.880056&minLongitude=-47.062292&maxLongitude=-47.053390";
 var xhttp = new XMLHttpRequest();
 
 fetch(url, {
@@ -48,8 +48,8 @@ function initMap() {
     marker.setPosition(latlng);
 
     const bounds = new google.maps.LatLngBounds(
-      new google.maps.LatLng(-22.887264, -47.060292),
-      new google.maps.LatLng(-22.881056, -47.054390)
+      new google.maps.LatLng(-22.888264, -47.062292),
+      new google.maps.LatLng(-22.880056, -47.053390)
     );
 
     let image = url;
