@@ -1,4 +1,5 @@
 
+
 let map;
 
 var geocoder;
@@ -11,25 +12,6 @@ fetch(url, {
   mode:"no-cors"
 })
 xhttp.open("GET",url, true);
-
-/*xhttp.onload = function(){
-  var image = new Image();
-  var response = xhr.responseText;
-			var binary = ""
-			
-			for(i=0;i<response.length;i++){
-				binary += String.fromCharCode(response.charCodeAt(i) & 0xff);
-			}
-			
-			img.src = 'data:image/jpeg;base64,' + btoa(binary);
-			var canvas = document.getElementById('showImage');
-			var context = canvas.getContext('2d');
-				
-			context.drawImage(img,0,0);
-			var snapshot = canvas.toDataURL("image/png");
-			var twinImage = document.getElementById('twinImg');
-			twinImage.src = snapshot;
-}*/
 
 function initMap() {
   var latlng = new google.maps.LatLng(-22.884151, -47.0578410);
@@ -174,3 +156,4 @@ if(navigator.geolocation) {
 } else {
   console.log('Navegador não suporta Geolocalização!');
 }
+

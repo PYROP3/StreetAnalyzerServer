@@ -208,7 +208,7 @@ const load = async () => {
      */
     module.exports.getUser = async function(user) {
         // Check for correct credentials
-        let result = await module.exports.db.collection(usersCollectionStr).findOne({
+        let result = await module.exports.db.collection(Constants.MONGO_COLLECTION_USERS).findOne({
             [Constants.USER_PRIMARY_KEY]:user
         });
         logger.debug("Got user data =", result);
