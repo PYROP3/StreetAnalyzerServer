@@ -31,7 +31,26 @@
 				</nav>
 			</div>
 		</header>
-        <input name="Local" id="local" type="text" />
+        <div class='mensagem' id="msg_form">
+			<form name="meu_form">
+
+				<h2>Entre em contato</h2>
+				<br><br><br><br>
+
+				<input type="text" id="nomeid" placeholder="Jorge Amigdala" required="required" name="nome" />
+				<label for="nome">Nome</label>
+			  
+				<input type="tel" id="foneid" placeholder="(xx)xx-xx-xx-xx" name="fone" />
+				<label for="telefone">Telefone</label>
+			  
+				<input type="email" id="emailid" placeholder="fulano@mail.com" name="email" />
+				<label for="email">Email</label>
+			  
+				<textarea placeholder="Deixe sua opnião"></textarea>
+			  
+				<input type="submit" class="enviar" onclick="Enviar();" value="Enviar" />
+			  </form>
+        </div>
     
 	</body>
 </html>
