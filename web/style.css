@@ -149,6 +149,7 @@ ul{
     font-size:25px;
     float: left;
     z-index: 1000;
+    opacity: 0;
 }
 img{
     z-index: 1000;

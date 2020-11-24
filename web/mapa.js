@@ -32,7 +32,7 @@ xhttp.open("GET",url, true);
 }*/
 
 function initMap() {
-  var latlng = new google.maps.LatLng(-22.887264, -47.054390);
+  var latlng = new google.maps.LatLng(-22.884151, -47.0578410);
   map = new google.maps.Map(document.getElementById("map"), {
     center: latlng,
     zoom: 17,
@@ -66,7 +66,7 @@ function initMap() {
         this.div.style.borderStyle = "none";
         this.div.style.borderWidth = "0px";
         this.div.style.position = "absolute";
-        this.div.style.opacity = "0.4";
+        this.div.style.opacity = "0.6";
         // Create the img element and attach it to the div.
         const img = document.createElement("img");
         img.src = this.image;
