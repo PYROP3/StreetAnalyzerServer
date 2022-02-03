@@ -8,7 +8,7 @@
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.19.0",
     "decode-google-map-polyline": "^1.0.1",
-    "dotenv": "^8.2.0",
+    "dotenv": "^16.0.0",
     "email-templates": "^6.1.1",
     "express": "^4.17.1",
     "handlebars": "^4.7.6",
