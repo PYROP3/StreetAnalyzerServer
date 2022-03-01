@@ -15,7 +15,7 @@
     "jws": "^4.0.0",
     "mongodb": "^3.6.2",
     "nodemailer": "^6.4.6",
-    "nodemailer-express-handlebars": "^4.0.0",
+    "nodemailer-express-handlebars": "^5.0.0",
     "request-cookie": "^1.0.0",
     "winston": "^3.2.1"
   },
